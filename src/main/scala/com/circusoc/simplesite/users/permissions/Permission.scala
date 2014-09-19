@@ -1,0 +1,39 @@
+package com.circusoc.simplesite.users.permissions
+
+import spray.json._
+
+sealed trait Permission {
+  val name: String
+  // Used for JSON conversion
+  val asPermission = this.asInstanceOf[Permission]
+}
+
+case class ChangePasswordPermission() extends Permission {
+  val name = "ChangePasswordPermission"
+}
+
+case class CanChangePermissionsPermission() extends Permission {
+  val name = "CanChangePermissionsPermission"
+}
+
+object Permission {
+  def apply(name: String): Permission = {name match {
+    case "ChangePasswordPermission" => ChangePasswordPermission()
+    case "CanChangePermissionsPermission" => CanChangePermissionsPermission()
+    case _ => throw new PermissionConstructionException(s"Invalid permission: $name")
+  }}
+
+  object PermissionJSONProtocol extends DefaultJsonProtocol {
+    implicit object PermissionJsonFormat extends RootJsonFormat[Permission] {
+      def write(c: Permission) =
+        JsString(c.name)
+
+      def read(value: JsValue): Permission = value match {
+        case JsString(name) => Permission.apply(name)
+        case _ => deserializationError("Permission expected")
+      }
+    }
+  }
+}
+
+case class PermissionConstructionException(name: String) extends Exception

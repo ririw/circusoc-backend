@@ -15,7 +15,7 @@ import com.circusoc.simplesite.users.permissions.Permission
  *
  *  It includes access control and authentication methods.
  */
-class User(val id: Int, val username: String, val userPermissions: Set[permissions.Permission]) {
+class User(val id: Int, val username: String, val userPermissions: Set[permissions.Permission]) extends Equals {
   def hasPermission(permission: permissions.Permission): Boolean = userPermissions.contains(permission)
   def addPermission(permission: permissions.Permission,
                     changingUser: AuthenticatedUser)(implicit WithConfig: WithConfig): User = {
@@ -29,16 +29,50 @@ class User(val id: Int, val username: String, val userPermissions: Set[permissio
                      changingUser: AuthenticatedUser)(implicit WithConfig: WithConfig): User = {
     User.changePassword(this, newPassword, User.MayChangePassProof.hasChangePerm(changingUser))
   }
+
+  override def canEqual(that: Any): Boolean = that.isInstanceOf[User]
+  override def equals(_that: Any): Boolean = {
+    _that match {
+      case that: User =>
+        that.canEqual(this) &&
+          this.canEqual(that) &&
+          that.id == id &&
+          that.username == username &&
+          that.userPermissions == userPermissions
+      case _ => false
+    }
+  }
+  override def hashCode(): Int = 9623 * id.hashCode() ^
+                                 8971 * username.hashCode ^
+                                 652903 * userPermissions.hashCode() ^
+                                 "User".hashCode
 }
 
-class   AuthenticatedUser(
+class  AuthenticatedUser(
   _id: Int,
   _username: String,
   _permissions: Set[permissions.Permission])
-  extends User(_id, _username, _permissions) {
+  extends User(_id, _username, _permissions) with Equals {
   override def changePassword(newPassword: Password, changingUser: AuthenticatedUser)(implicit WithConfig: WithConfig): User = {
     User.changePassword(this, newPassword, User.MayChangePassProof.isChangingUser(this, changingUser))
   }
+
+  override def canEqual(that: Any): Boolean = that.isInstanceOf[AuthenticatedUser]
+  override def equals(_that: Any): Boolean = {
+    _that match {
+      case that: AuthenticatedUser =>
+        that.canEqual(this) &&
+          this.canEqual(that) &&
+          that.id == id &&
+          that.username == username &&
+          that.userPermissions == userPermissions
+      case _ => false
+    }
+  }
+  override def hashCode(): Int = 652499 * id.hashCode() ^
+    981137 * username.hashCode ^
+    25243 * userPermissions.hashCode() ^
+    "AuthenticatedUser".hashCode()
 }
 
 object User {
@@ -121,7 +155,9 @@ object User {
           } else {
             None
           }
-        case _ => None
+        // $COVERAGE-OFF$
+        case _ => None // this will only happen in certain race conditions.
+        // $COVERAGE-ON$
       }
     }
   }
@@ -143,7 +179,7 @@ object User {
       assert(changingUser.id == changedUser.id)
       new MayChangePassProof {}
     }
-    def isTest() = {
+    def isTest = {
       println("TESTTESTTEST") // fixme
       new MayChangePassProof {}
     }
@@ -153,10 +189,12 @@ object User {
                     permission: permissions.Permission,
                     mayChangePermsProof: MayChangePermsProof)(implicit WithConfig: WithConfig): User = {
     DB.autoCommit{implicit session =>
-      sql"INSERT INTO permission VALUES (${to.id}, ${permission.name})".execute().apply()
+      sql"INSERT INTO permissions VALUES (${to.id}, ${permission.name})".execute().apply()
     }
     val user = getUserByID(to.id)
+    // $COVERAGE-OFF$
     assert(user.isDefined, "Invalid state - we added a permission, but couldn't find the user in the db afterwards.")
+    // $COVERAGE-ON$
     user.get
   }
 
@@ -165,11 +203,13 @@ object User {
                        mayChangePermsProof: MayChangePermsProof)(implicit WithConfig: WithConfig): User = {
 
     DB.autoCommit{implicit session =>
-      sql"DELETE FROM permission WHERE id=${from.id} AND permission=${permission.name}".execute().apply()
+      sql"DELETE FROM permissions WHERE user_id=${from.id} AND permission=${permission.name}".execute().apply()
     }
 
     val user = getUserByID(from.id)
+    // $COVERAGE-OFF$
     assert(user.isDefined, "Invalid state - we removed a permission, but couldn't find the user in the db afterwards.")
+    // $COVERAGE-ON$
     user.get
   }
   
@@ -188,7 +228,7 @@ object User {
         JsObject(
           "id" -> JsNumber(c.id),
           "username" -> JsString(c.username),
-          "permissions" -> JsArray(c.userPermissions.toJson)
+          "permissions" -> c.userPermissions.toJson
       )
 
       def read(value: JsValue): User = value match {

@@ -2,5 +2,6 @@
     <user id="1" username="Admin"     password="XXXXX" />
     <user id="2" username="Quarry"    password="XXXXX" />
     <user id="3" username="Stockpile" password="XXXXX" />
+    <permissions user_id="1" permission="CanChangePermissionsPermission" />
 </dataset>
 

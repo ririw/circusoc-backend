@@ -93,7 +93,7 @@ object User {
           id, username, permission
         FROM
           user
-          LEFT JOIN permissions ON user.id=permissions.user_id
+          LEFT JOIN permission ON user.id=permission.user_id
         WHERE id=$id""".foldLeft(UserBuilder())(collectUser)
     }
     builder.build()
@@ -106,7 +106,7 @@ object User {
           id, username, permission
         FROM
           user
-          LEFT JOIN permissions ON user.id=permissions.user_id
+          LEFT JOIN permission ON user.id=permission.user_id
         WHERE username=$name""".foldLeft(UserBuilder())(collectUser)
     }
     builder.build()
@@ -189,7 +189,7 @@ object User {
                     permission: permissions.Permission,
                     mayChangePermsProof: MayChangePermsProof)(implicit WithConfig: WithConfig): User = {
     DB.autoCommit{implicit session =>
-      sql"INSERT INTO permissions VALUES (${to.id}, ${permission.name})".execute().apply()
+      sql"INSERT INTO permission VALUES (${to.id}, ${permission.name})".execute().apply()
     }
     val user = getUserByID(to.id)
     // $COVERAGE-OFF$
@@ -203,7 +203,7 @@ object User {
                        mayChangePermsProof: MayChangePermsProof)(implicit WithConfig: WithConfig): User = {
 
     DB.autoCommit{implicit session =>
-      sql"DELETE FROM permissions WHERE user_id=${from.id} AND permission=${permission.name}".execute().apply()
+      sql"DELETE FROM permission WHERE user_id=${from.id} AND permission=${permission.name}".execute().apply()
     }
 
     val user = getUserByID(from.id)

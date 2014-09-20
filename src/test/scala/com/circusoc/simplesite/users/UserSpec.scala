@@ -7,11 +7,11 @@ import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
 import com.circusoc.simplesite.{DBSetup, DB, WithConfig}
 import java.sql.{Connection, DriverManager}
-import com.circusoc.simplesite.users.{AuthenticatedUser, Password, User}
 import org.dbunit.database.DatabaseConnection
 import org.dbunit.operation.DatabaseOperation
 import scalikejdbc.ConnectionPool
 import com.circusoc.simplesite.users.User.UserBuilder
+import com.circusoc.simplesite.users.permissions.{PermissionConstructionException, ChangePasswordPermission, Permission, CanChangePermissionsPermission}
 
 class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 val dbtype = "h2"
@@ -140,7 +140,7 @@ val dbtype = "h2"
 
   "the password stuff" should "change passwords and authenticate" in {
     val user = new UserBuilder().addId(1).addUsername("Admin").build().get
-    User.changePassword(user, Password("joe"), User.MayChangePassProof.isTest())
+    User.changePassword(user, Password("joe"), User.MayChangePassProof.isTest)
     val founduser = User.authenticateByUsername("Admin", Password("joe"))
     assert(founduser.isDefined)
     val unfounduser = User.authenticateByUsername("Admin", Password("joeee"))

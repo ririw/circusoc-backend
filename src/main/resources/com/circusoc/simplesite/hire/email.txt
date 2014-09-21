@@ -1,0 +1,3 @@
+Hey! Someone has submitted a gig request, from %s! At location %s! With skills %s!
+
+GOGOOG

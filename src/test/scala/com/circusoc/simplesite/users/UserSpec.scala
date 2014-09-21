@@ -5,7 +5,7 @@ import org.scalatest.Matchers._
 import org.dbunit.{PropertiesBasedJdbcDatabaseTester, DBTestCase}
 import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
-import com.circusoc.simplesite.{DBSetup, DB, WithConfig}
+import com.circusoc.simplesite.{Hire, DBSetup, DB, WithConfig}
 import java.sql.{Connection, DriverManager}
 import org.dbunit.database.DatabaseConnection
 import org.dbunit.operation.DatabaseOperation
@@ -14,7 +14,7 @@ import com.circusoc.simplesite.users.User.UserBuilder
 import com.circusoc.simplesite.users.permissions.{PermissionConstructionException, ChangePasswordPermission, Permission, CanChangePermissionsPermission}
 
 class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
-val dbtype = "h2"
+  val dbtype = "h2"
   dbtype match {
     case "h2" =>
       System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.h2.jdbcDriver" )
@@ -22,40 +22,35 @@ val dbtype = "h2"
     case "hsqldb" =>
       System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.hsqldb.jdbc.JDBCDriver")
       System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:hsqldb:mem:userspec;DB_CLOSE_DELAY=-1" )
-    case "sqlite" =>
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.sqlite.JDBC" )
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:sqlite:/home/riri/tmp/test.db" )
   }
   System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_USERNAME, "sa" )
   System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD, "" )
 
   implicit val config = new WithConfig {
     override val db: DB = new DB {
+      override val symbol = 'userspec
       override def setup() = {
         dbtype match {
           case "h2" => Class.forName("org.h2.Driver")
           case "hsqldb" => Class.forName("org.hsqldb.jdbc.JDBCDriver")
-          case "sqlite" => Class.forName("org.sqlite.JDBC")
         }
         val url = dbtype match {
-          case "h2" =>     "jdbc:h2:mem:userspec;DB_CLOSE_DELAY=-1"
-          case "hsqldb" => "jdbc:hsqldb:mem:userspec;DB_CLOSE_DELAY=-1"
-          case "sqlite" => "jdbc:sqlite:/home/riri/tmp/test.db"
+          case "h2" =>     s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
+          case "hsqldb" => s"jdbc:hsqldb:mem:${symbol.name};DB_CLOSE_DELAY=-1"
         }
-        ConnectionPool.singleton(url, "sa", "")
+        ConnectionPool.add(symbol, url, "sa", "")
       }
     }
+    override val hire: Hire = new Hire {}
   }
   def getJDBC(): Connection = {
     dbtype match {
       case "h2" => Class.forName("org.h2.Driver")
       case "hsqldb" => Class.forName("org.hsqldb.jdbc.JDBCDriver")
-      case "sqlite" => Class.forName("org.sqlite.JDBC")
     }
     val c = dbtype match {
       case "h2" => DriverManager.getConnection("jdbc:h2:mem:userspec;DB_CLOSE_DELAY=-1", "sa", "")
       case "hsqldb" => DriverManager.getConnection("jdbc:hsqldb:mem:userspec;DB_CLOSE_DELAY=-1", "sa", "")
-      case "sqlite" => DriverManager.getConnection("jdbc:sqlite:/home/riri/tmp/test.db")
     }
     c.setAutoCommit(true)
     c
@@ -67,7 +62,7 @@ val dbtype = "h2"
   DatabaseOperation.CLEAN_INSERT.execute(conn, getDataSet())
 
   override def getDataSet: IDataSet = new FlatXmlDataSetBuilder().
-    build(classOf[UserSpec].
+      build(classOf[UserSpec].
     getResourceAsStream("/com/circusoc/simplesite/users/UserDBSpec.xml"))
 
   it should "Not retrieve made up users" in {

@@ -18,15 +18,15 @@ import com.circusoc.simplesite.users.permissions.Permission
 class User(val id: Int, val username: String, val userPermissions: Set[permissions.Permission]) extends Equals {
   def hasPermission(permission: permissions.Permission): Boolean = userPermissions.contains(permission)
   def addPermission(permission: permissions.Permission,
-                    changingUser: AuthenticatedUser)(implicit WithConfig: WithConfig): User = {
+                    changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
     User.addPermission(this, permission, User.MayChangePermsProof.hasChangePermisProof(changingUser))
   }
   def removePermission(permission: permissions.Permission,
-                       changingUser: AuthenticatedUser)(implicit WithConfig: WithConfig): User = {
+                       changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
     User.removePermission(this, permission, User.MayChangePermsProof.hasChangePermisProof(changingUser))
   }
   def changePassword(newPassword: Password,
-                     changingUser: AuthenticatedUser)(implicit WithConfig: WithConfig): User = {
+                     changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
     User.changePassword(this, newPassword, User.MayChangePassProof.hasChangePerm(changingUser))
   }
 
@@ -53,7 +53,7 @@ class  AuthenticatedUser(
   _username: String,
   _permissions: Set[permissions.Permission])
   extends User(_id, _username, _permissions) with Equals {
-  override def changePassword(newPassword: Password, changingUser: AuthenticatedUser)(implicit WithConfig: WithConfig): User = {
+  override def changePassword(newPassword: Password, changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
     User.changePassword(this, newPassword, User.MayChangePassProof.isChangingUser(this, changingUser))
   }
 
@@ -86,8 +86,8 @@ object User {
     }.getOrElse(res)
   }
 
-  def getUserByID(id: Int)(implicit WithConfig: WithConfig): Option[User] = {
-    val builder = DB.readOnly{implicit session =>
+  def getUserByID(id: Int)(implicit config: WithConfig): Option[User] = {
+    val builder = NamedDB(config.db.symbol).readOnly{implicit session =>
       sql"""
         SELECT
           id, username, permission
@@ -99,8 +99,8 @@ object User {
     builder.build()
   }
 
-  def getUserByName(name: String)(implicit WithConfig: WithConfig): Option[User] = {
-    val builder = DB.readOnly{implicit session =>
+  def getUserByName(name: String)(implicit config: WithConfig): Option[User] = {
+    val builder = NamedDB(config.db.symbol).readOnly{implicit session =>
       sql"""
         SELECT
           id, username, permission
@@ -138,8 +138,8 @@ object User {
   }
 
   def authenticateByUsername(name: String, pass: Password)
-                            (implicit WithConfig: WithConfig): Option[AuthenticatedUser] = {
-    DB.readOnly { implicit session =>
+                            (implicit config: WithConfig): Option[AuthenticatedUser] = {
+    NamedDB(config.db.symbol).readOnly { implicit session =>
       val _hashedpw = sql"""
         SELECT password
         FROM
@@ -161,8 +161,8 @@ object User {
       }
     }
   }
-  def changePassword(user: User, newpass: Password, mayChangeProof: MayChangePassProof)(implicit WithConfig: WithConfig): User = {
-    DB.autoCommit{implicit session =>
+  def changePassword(user: User, newpass: Password, mayChangeProof: MayChangePassProof)(implicit config: WithConfig): User = {
+    NamedDB(config.db.symbol).autoCommit{implicit session =>
       val password = BCrypt.hashpw(newpass.pass, BCrypt.gensalt())
       sql"UPDATE user SET password=$password WHERE id=${user.id}".executeUpdate().apply()
     }
@@ -187,8 +187,8 @@ object User {
   
   def addPermission(to: User,
                     permission: permissions.Permission,
-                    mayChangePermsProof: MayChangePermsProof)(implicit WithConfig: WithConfig): User = {
-    DB.autoCommit{implicit session =>
+                    mayChangePermsProof: MayChangePermsProof)(implicit config: WithConfig): User = {
+    NamedDB(config.db.symbol).autoCommit{implicit session =>
       sql"INSERT INTO permission VALUES (${to.id}, ${permission.name})".execute().apply()
     }
     val user = getUserByID(to.id)
@@ -200,9 +200,9 @@ object User {
 
   def removePermission(from: User,
                        permission: permissions.Permission,
-                       mayChangePermsProof: MayChangePermsProof)(implicit WithConfig: WithConfig): User = {
+                       mayChangePermsProof: MayChangePermsProof)(implicit config: WithConfig): User = {
 
-    DB.autoCommit{implicit session =>
+    NamedDB(config.db.symbol).autoCommit{implicit session =>
       sql"DELETE FROM permission WHERE user_id=${from.id} AND permission=${permission.name}".execute().apply()
     }
 

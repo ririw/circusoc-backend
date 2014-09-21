@@ -30,7 +30,8 @@ libraryDependencies ++= Seq(
   "org.joda"            % "joda-convert"     % "1.2",
   "org.dbunit"          % "dbunit"           % "2.5.0"        % "test",
   "org.xerial"          % "sqlite-jdbc"      % "3.8.5-pre1"   % "test",
-  "org.hsqldb"          % "hsqldb"           % "2.3.2"
+  "org.hsqldb"          % "hsqldb"           % "2.3.2",
+  "org.codemonkey.simplejavamail" % "simple-java-mail" % "2.1"
 )
 
 scalacOptions ++= Seq(

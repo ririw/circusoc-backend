@@ -8,6 +8,7 @@ object Main extends App with SimpleRoutingApp with Core with Auth {
   implicit val system = ActorSystem("my-system")
   implicit val config = new WithConfig {
     override val db: DB = new DB{}
+    override val hire: Hire = new Hire {}
   }
 
   startServer(interface = "localhost", port = 8080) {

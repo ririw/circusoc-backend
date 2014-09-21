@@ -5,24 +5,22 @@ import org.scalatest.Matchers._
 import org.dbunit.{PropertiesBasedJdbcDatabaseTester, DBTestCase}
 import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
-import com.circusoc.simplesite.{Hire, DBSetup, DB, WithConfig}
+import com.circusoc.simplesite._
 import java.sql.{Connection, DriverManager}
 import org.dbunit.database.DatabaseConnection
 import org.dbunit.operation.DatabaseOperation
 import scalikejdbc.ConnectionPool
+import com.circusoc.simplesite.users.permissions.Permission
+import com.circusoc.simplesite.users.permissions.ChangePasswordPermission
+import com.circusoc.simplesite.users.permissions.PermissionConstructionException
+import scala.Some
 import com.circusoc.simplesite.users.User.UserBuilder
-import com.circusoc.simplesite.users.permissions.{PermissionConstructionException, ChangePasswordPermission, Permission, CanChangePermissionsPermission}
+import com.circusoc.simplesite.users.permissions.CanChangePermissionsPermission
+import org.codemonkey.simplejavamail.Email
 
 class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
-  val dbtype = "h2"
-  dbtype match {
-    case "h2" =>
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.h2.jdbcDriver" )
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:h2:mem:userspec;DB_CLOSE_DELAY=-1" )
-    case "hsqldb" =>
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.hsqldb.jdbc.JDBCDriver")
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:hsqldb:mem:userspec;DB_CLOSE_DELAY=-1" )
-  }
+  System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.h2.jdbcDriver" )
+  System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:h2:mem:userspec;DB_CLOSE_DELAY=-1" )
   System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_USERNAME, "sa" )
   System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD, "" )
 
@@ -30,28 +28,19 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     override val db: DB = new DB {
       override val symbol = 'userspec
       override def setup() = {
-        dbtype match {
-          case "h2" => Class.forName("org.h2.Driver")
-          case "hsqldb" => Class.forName("org.hsqldb.jdbc.JDBCDriver")
-        }
-        val url = dbtype match {
-          case "h2" =>     s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
-          case "hsqldb" => s"jdbc:hsqldb:mem:${symbol.name};DB_CLOSE_DELAY=-1"
-        }
+        Class.forName("org.h2.Driver")
+        val url = s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
         ConnectionPool.add(symbol, url, "sa", "")
       }
     }
     override val hire: Hire = new Hire {}
+    override val mailer: MailerLike = new MailerLike {
+      override def sendMail(email: Email): Unit = ???
+    }
   }
   def getJDBC(): Connection = {
-    dbtype match {
-      case "h2" => Class.forName("org.h2.Driver")
-      case "hsqldb" => Class.forName("org.hsqldb.jdbc.JDBCDriver")
-    }
-    val c = dbtype match {
-      case "h2" => DriverManager.getConnection("jdbc:h2:mem:userspec;DB_CLOSE_DELAY=-1", "sa", "")
-      case "hsqldb" => DriverManager.getConnection("jdbc:hsqldb:mem:userspec;DB_CLOSE_DELAY=-1", "sa", "")
-    }
+    Class.forName("org.h2.Driver")
+    val c = DriverManager.getConnection("jdbc:h2:mem:userspec;DB_CLOSE_DELAY=-1", "sa", "")
     c.setAutoCommit(true)
     c
   }
@@ -140,6 +129,27 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     assert(founduser.isDefined)
     val unfounduser = User.authenticateByUsername("Admin", Password("joeee"))
     assert(unfounduser.isEmpty)
+  }
+
+  it should "not allow test proofs in production" in {
+    val prod_config = new WithConfig {
+      override val isProduction = true
+      override val db: DB = new DB {
+        override val symbol = 'userspec
+        override def setup() = {
+          Class.forName("org.h2.Driver")
+          val url = s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
+          ConnectionPool.add(symbol, url, "sa", "")
+        }
+      }
+      override val hire: Hire = new Hire {}
+      override val mailer: MailerLike = new MailerLike {
+        override def sendMail(email: Email): Unit = ???
+      }
+    }
+    intercept[AssertionError] {
+      User.MayChangePassProof.isTest(prod_config)
+    }
   }
 
   it should "be able to change authenticated user's passwords" in {

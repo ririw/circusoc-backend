@@ -20,18 +20,19 @@ libraryDependencies ++= Seq(
   "io.spray"            % "spray-can"        % "1.2-20130712",
   "io.spray"            % "spray-routing"    % "1.2-20130712",
   "io.spray"           %% "spray-json"       % "1.2.6",
-  "org.scalatest"      %% "scalatest"        % "2.1.6"        % "test",
-  "org.scalacheck"     %% "scalacheck"       % "1.11.5"       % "test",
-  "io.spray"            % "spray-testkit"    % "1.2-20130712" % "test",
-  "com.typesafe.akka"  %% "akka-testkit"     % "2.2.0"        % "test",
+  "org.scalatest"      %% "scalatest"        % "2.1.6"            % "test",
+  "org.scalacheck"     %% "scalacheck"       % "1.11.5"           % "test",
+  "io.spray"            % "spray-testkit"    % "1.2-20130712"     % "test",
+  "com.typesafe.akka"  %% "akka-testkit"     % "2.2.0"            % "test",
   "org.scalikejdbc"    %% "scalikejdbc"      % "2.1.1",
   "com.h2database"      % "h2"               % "1.4.181",
   "org.mindrot"         % "jbcrypt"          % "0.3m",
   "org.joda"            % "joda-convert"     % "1.2",
-  "org.dbunit"          % "dbunit"           % "2.5.0"        % "test",
-  "org.xerial"          % "sqlite-jdbc"      % "3.8.5-pre1"   % "test",
+  "org.dbunit"          % "dbunit"           % "2.5.0"            % "test",
+  "org.xerial"          % "sqlite-jdbc"      % "3.8.5-pre1"       % "test",
   "org.hsqldb"          % "hsqldb"           % "2.3.2",
-  "org.codemonkey.simplejavamail" % "simple-java-mail" % "2.1"
+  "org.codemonkey.simplejavamail" % "simple-java-mail"            % "2.1",
+  "org.scalamock"                %% "scalamock-scalatest-support" % "3.0.1" % "test"
 )
 
 scalacOptions ++= Seq(

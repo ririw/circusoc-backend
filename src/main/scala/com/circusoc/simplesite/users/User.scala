@@ -6,6 +6,7 @@ import org.mindrot.jbcrypt.BCrypt
 import spray.json._
 import scala.Some
 import com.circusoc.simplesite.users.permissions.Permission
+import org.slf4j.LoggerFactory
 
 // !!! IMPORTANT, else `convertTo` and `toJson` won't work correctly
 
@@ -76,6 +77,8 @@ class  AuthenticatedUser(
 }
 
 object User {
+  val logger = LoggerFactory.getLogger("chapters.introduction.HelloWorld1")
+
   private def collectUser(ub: UserBuilder, rs: WrappedResultSet): UserBuilder = {
     val id = rs.int("id")
     val username = rs.string("username")
@@ -179,12 +182,12 @@ object User {
       assert(changingUser.id == changedUser.id)
       new MayChangePassProof {}
     }
-    def isTest = {
-      println("TESTTESTTEST") // fixme
+    def isTest(implicit config: WithConfig) = {
+      assert(!config.isProduction)
       new MayChangePassProof {}
     }
   }
-  
+
   def addPermission(to: User,
                     permission: permissions.Permission,
                     mayChangePermsProof: MayChangePermsProof)(implicit config: WithConfig): User = {

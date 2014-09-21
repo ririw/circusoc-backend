@@ -2,12 +2,17 @@ package com.circusoc.simplesite
 
 import java.sql.{Connection, DriverManager}
 import scalikejdbc._
+import org.codemonkey.simplejavamail.Email
+
 trait WithConfig {
   val db: DB
   val hire: Hire
+  val mailer: MailerLike
+  val isProduction = false
 }
 
 trait DB {
+
   def symbol: Symbol = 'production
   def setup() {
     //Class.forName("org.h2.Driver")
@@ -31,4 +36,8 @@ trait Hire {
     this.getClass.getResourceAsStream("/com/circusoc/simplesite/hire/email.txt")).getLines().mkString("\n")
   val emailHTML: String = scala.io.Source.fromInputStream(
     this.getClass.getResourceAsStream("/com/circusoc/simplesite/hire/email.html")).getLines().mkString("\n")
+}
+
+trait MailerLike {
+  def sendMail(email: Email): Unit
 }

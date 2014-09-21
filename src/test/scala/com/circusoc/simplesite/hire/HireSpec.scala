@@ -1,8 +1,8 @@
 package com.circusoc.simplesite.hire
 
-import org.dbunit.{PropertiesBasedJdbcDatabaseTester, DBTestCase}
+import org.dbunit.DBTestCase
 import org.scalatest.{BeforeAndAfter, FlatSpecLike}
-import com.circusoc.simplesite.{DBSetup, Hire, DB, WithConfig}
+import com.circusoc.simplesite._
 import scalikejdbc.ConnectionPool
 import java.sql.{DriverManager, Connection}
 import org.dbunit.database.DatabaseConnection
@@ -11,51 +11,20 @@ import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import org.codemonkey.simplejavamail.{Mailer, Email}
+import org.scalatest.Matchers._
 
 class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
-  val dbtype = "h2"
-  dbtype match {
-    case "h2" =>
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.h2.jdbcDriver" )
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:h2:mem:hirespec;DB_CLOSE_DELAY=-1" )
-    case "hsqldb" =>
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.hsqldb.jdbc.JDBCDriver")
-      System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:hsqldb:mem:hirespec;DB_CLOSE_DELAY=-1" )
-  }
-  System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_USERNAME, "sa" )
-  System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD, "" )
+  val config = new PartialConfig({_ => Unit})
 
-  implicit val config = new WithConfig {
-    override val db: DB = new DB {
-      override val symbol = 'hirespec
-      override def setup() = {
-        dbtype match {
-          case "h2" => Class.forName("org.h2.Driver")
-          case "hsqldb" => Class.forName("org.hsqldb.jdbc.JDBCDriver")
-        }
-        val url = dbtype match {
-          case "h2" =>     s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
-          case "hsqldb" => s"jdbc:hsqldb:mem:${symbol.name};DB_CLOSE_DELAY=-1"
-        }
-        ConnectionPool.add(symbol, url, "sa", "")
-      }
-    }
-    override val hire: Hire = new Hire {}
-  }
   def getJDBC(): Connection = {
-    dbtype match {
-      case "h2" => Class.forName("org.h2.Driver")
-      case "hsqldb" => Class.forName("org.hsqldb.jdbc.JDBCDriver")
-    }
-    val c = dbtype match {
-      case "h2" => DriverManager.getConnection("jdbc:h2:mem:hirespec;DB_CLOSE_DELAY=-1", "sa", "")
-      case "hsqldb" => DriverManager.getConnection("jdbc:hsqldb:mem:hirespec;DB_CLOSE_DELAY=-1", "sa", "")
-    }
+    Class.forName("org.h2.Driver")
+    val c =DriverManager.getConnection("jdbc:h2:mem:hirespec;DB_CLOSE_DELAY=-1", "sa", "")
     c.setAutoCommit(true)
     c
   }
   config.db.setup()
-  DBSetup.setup()
+  DBSetup.setup()(config)
 
   val conn = new DatabaseConnection(getJDBC())
   DatabaseOperation.CLEAN_INSERT.execute(conn, getDataSet())
@@ -64,8 +33,85 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     build(classOf[HireSpec].
     getResourceAsStream("/com/circusoc/simplesite/users/UserDBSpec.xml"))
 
-  it should "send emails" in {
+  it should "send emails and delete their log entries" in {
+    var sends = 0
+    def mockSend(e: Email) {
+      sends += 1
+    }
+    implicit val mockConfig = new PartialConfig(mockSend)
     val hire = Hire.hire(EmailAddress("richard@example.com"), Location("sydney"), List("Fire", "Juggles"))
-    val result = Await.result(hire, Duration.Inf)
+    Await.result(hire, Duration.Inf)
+    sends should be(1)
+    Hire.pendingHireQueueSize() should be(0)
+  }
+
+  it should "queue emails if they don't send and then send them" in {
+    var badSends = 0
+    def badSend(e: Email) {
+      badSends += 1
+      throw new Exception()
+    }
+    val mockConfig1 = new PartialConfig(badSend)
+    val hire = Hire.hire(EmailAddress("steve@example.com"), Location("sydney"), List("Fire", "Juggles"))(mockConfig1)
+    intercept[Exception]{
+      Await.result(hire, Duration.Inf)
+    }
+    Hire.pendingHireQueueSize()(mockConfig1) should be(1)
+
+    var goodSends = 0
+    def goodSend(e: Email) {
+      goodSends += 1
+    }
+    val mockConfig2 = new PartialConfig(goodSend)
+    Hire.processPendingQueue()(mockConfig2)
+
+    Hire.pendingHireQueueSize()(mockConfig2) should be(0)
+    goodSends should be(1)
+  }
+
+  it should "send nothing when there is nothing to send" in {
+    var goodSends = 0
+    def goodSend(e: Email) {
+      goodSends += 1
+    }
+    val mockConfig2 = new PartialConfig(goodSend)
+    Hire.pendingHireQueueSize()(mockConfig2) should be(0)
+    Hire.processPendingQueue()(mockConfig2)
+
+    Hire.pendingHireQueueSize()(mockConfig2) should be(0)
+    goodSends should be(0)
+  }
+  it should "not send made up emails" in {
+    var goodSends = 0
+    def goodSend(e: Email) {
+      goodSends += 1
+    }
+    val mockConfig2 = new PartialConfig(goodSend)
+    Hire.pendingHireQueueSize()(mockConfig2) should be(0)
+    Hire.processHireRequest(-1)(mockConfig2)
+    goodSends should be(0)
+  }
+
+  it should "really send an email" ignore {
+    val mailer = new Mailer(config.hire.smtpHost, config.hire.smtpPort, config.hire.smtpUser, config.hire.smtpPass)
+    def sendMail(email: Email): Unit = mailer.sendMail(email)
+    val realConfig = new PartialConfig(sendMail)
+    val hire = Hire.hire(EmailAddress("steve@example.com"), Location("sydney"), List("Fire", "Juggles"))(realConfig)
+    Await.result(hire, Duration.Inf)
+  }
+}
+
+class PartialConfig(mockMailer: Email => Unit) extends WithConfig {
+  override val db: DB = new DB {
+    override val symbol = 'hirespec
+    override def setup() = {
+      Class.forName("org.h2.Driver")
+      val url = s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
+      ConnectionPool.add(symbol, url, "sa", "")
+    }
+  }
+  override val hire: Hire = new Hire {}
+  override val mailer: MailerLike = new MailerLike{
+    override def sendMail(email: Email): Unit = mockMailer(email)
   }
 }

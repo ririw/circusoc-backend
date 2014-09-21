@@ -3,12 +3,18 @@ package com.circusoc.simplesite
 import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
 import com.circusoc.simplesite.users.Auth
+import org.codemonkey.simplejavamail.{Mailer, Email}
 
 object Main extends App with SimpleRoutingApp with Core with Auth {
   implicit val system = ActorSystem("my-system")
   implicit val config = new WithConfig {
+    override val isProduction = true
     override val db: DB = new DB{}
     override val hire: Hire = new Hire {}
+    override val mailer: MailerLike = new MailerLike {
+      val mailer = new Mailer(hire.smtpHost, hire.smtpPort, hire.smtpUser, hire.smtpPass)
+      override def sendMail(email: Email): Unit = mailer.sendMail(email)
+    }
   }
 
   startServer(interface = "localhost", port = 8080) {

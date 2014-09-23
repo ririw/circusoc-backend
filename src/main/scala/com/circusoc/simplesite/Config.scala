@@ -13,12 +13,10 @@ trait WithConfig {
 
 trait DB {
 
-  def symbol: Symbol = 'production
+  def poolName: Symbol = 'production
   def setup() {
-    //Class.forName("org.h2.Driver")
-    //ConnectionPool.singleton("jdbc:h2:~/test", "sa", "")
-    //ConnectionPool.add('foo, "jdbc:h2:~/test", "sa", "")
-    ???
+    Class.forName("org.h2.Driver")
+    ConnectionPool.add('production, "jdbc:h2:~/test", "sa", "")
   }
 }
 

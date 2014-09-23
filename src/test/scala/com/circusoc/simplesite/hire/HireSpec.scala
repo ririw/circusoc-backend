@@ -39,7 +39,20 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
       sends += 1
     }
     implicit val mockConfig = new PartialConfig(mockSend)
-    val hire = Hire.hire(EmailAddress("richard@example.com"), Location("sydney"), List("Fire", "Juggles"))
+    val hire = Hire.hire(EmailAddress("richard@example.com"), Some(Location("sydney")), List("Fire", "Juggles"))
+    Await.result(hire, Duration.Inf)
+    sends should be(1)
+    Hire.pendingHireQueueSize() should be(0)
+  }
+
+
+  it should "send emails and delete their log entries with non locations" in {
+    var sends = 0
+    def mockSend(e: Email) {
+      sends += 1
+    }
+    implicit val mockConfig = new PartialConfig(mockSend)
+    val hire = Hire.hire(EmailAddress("richard@example.com"), None, List("Fire", "Juggles"))
     Await.result(hire, Duration.Inf)
     sends should be(1)
     Hire.pendingHireQueueSize() should be(0)
@@ -52,7 +65,7 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
       throw new Exception()
     }
     val mockConfig1 = new PartialConfig(badSend)
-    val hire = Hire.hire(EmailAddress("steve@example.com"), Location("sydney"), List("Fire", "Juggles"))(mockConfig1)
+    val hire = Hire.hire(EmailAddress("steve@example.com"), Some(Location("sydney")), List("Fire", "Juggles"))(mockConfig1)
     intercept[Exception]{
       Await.result(hire, Duration.Inf)
     }
@@ -96,18 +109,18 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     val mailer = new Mailer(config.hire.smtpHost, config.hire.smtpPort, config.hire.smtpUser, config.hire.smtpPass)
     def sendMail(email: Email): Unit = mailer.sendMail(email)
     val realConfig = new PartialConfig(sendMail)
-    val hire = Hire.hire(EmailAddress("steve@example.com"), Location("sydney"), List("Fire", "Juggles"))(realConfig)
+    val hire = Hire.hire(EmailAddress("steve@example.com"), Some(Location("sydney")), List("Fire", "Juggles"))(realConfig)
     Await.result(hire, Duration.Inf)
   }
 }
 
 class PartialConfig(mockMailer: Email => Unit) extends WithConfig {
   override val db: DB = new DB {
-    override val symbol = 'hirespec
+    override val poolName = 'hirespec
     override def setup() = {
       Class.forName("org.h2.Driver")
-      val url = s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
-      ConnectionPool.add(symbol, url, "sa", "")
+      val url = s"jdbc:h2:mem:${poolName.name};DB_CLOSE_DELAY=-1"
+      ConnectionPool.add(poolName, url, "sa", "")
     }
   }
   override val hire: Hire = new Hire {}

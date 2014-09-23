@@ -26,11 +26,11 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 
   implicit val config = new WithConfig {
     override val db: DB = new DB {
-      override val symbol = 'userspec
+      override val poolName = 'userspec
       override def setup() = {
         Class.forName("org.h2.Driver")
-        val url = s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
-        ConnectionPool.add(symbol, url, "sa", "")
+        val url = s"jdbc:h2:mem:${poolName.name};DB_CLOSE_DELAY=-1"
+        ConnectionPool.add(poolName, url, "sa", "")
       }
     }
     override val hire: Hire = new Hire {}
@@ -135,11 +135,11 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     val prod_config = new WithConfig {
       override val isProduction = true
       override val db: DB = new DB {
-        override val symbol = 'userspec
+        override val poolName = 'userspec
         override def setup() = {
           Class.forName("org.h2.Driver")
-          val url = s"jdbc:h2:mem:${symbol.name};DB_CLOSE_DELAY=-1"
-          ConnectionPool.add(symbol, url, "sa", "")
+          val url = s"jdbc:h2:mem:${poolName.name};DB_CLOSE_DELAY=-1"
+          ConnectionPool.add(poolName, url, "sa", "")
         }
       }
       override val hire: Hire = new Hire {}

@@ -77,20 +77,21 @@ class  AuthenticatedUser(
 }
 
 object User {
-  val logger = LoggerFactory.getLogger("chapters.introduction.HelloWorld1")
+  val logger = LoggerFactory.getLogger(User.getClass.getName)
 
   private def collectUser(ub: UserBuilder, rs: WrappedResultSet): UserBuilder = {
     val id = rs.int("id")
     val username = rs.string("username")
     val permission = rs.stringOpt("permission")
     val res = ub.addId(id).addUsername(username)
-    permission.map {
-      p => res.addPermission(Permission.apply(p))
-    }.getOrElse(res)
+    permission match {
+      case None => res
+      case Some(p) => res.addPermission(Permission.apply(p))
+    }
   }
 
   def getUserByID(id: Int)(implicit config: WithConfig): Option[User] = {
-    val builder = NamedDB(config.db.symbol).readOnly{implicit session =>
+    val builder = NamedDB(config.db.poolName).readOnly{implicit session =>
       sql"""
         SELECT
           id, username, permission
@@ -103,7 +104,7 @@ object User {
   }
 
   def getUserByName(name: String)(implicit config: WithConfig): Option[User] = {
-    val builder = NamedDB(config.db.symbol).readOnly{implicit session =>
+    val builder = NamedDB(config.db.poolName).readOnly{implicit session =>
       sql"""
         SELECT
           id, username, permission
@@ -142,7 +143,7 @@ object User {
 
   def authenticateByUsername(name: String, pass: Password)
                             (implicit config: WithConfig): Option[AuthenticatedUser] = {
-    NamedDB(config.db.symbol).readOnly { implicit session =>
+    NamedDB(config.db.poolName).readOnly { implicit session =>
       val _hashedpw = sql"""
         SELECT password
         FROM
@@ -165,7 +166,7 @@ object User {
     }
   }
   def changePassword(user: User, newpass: Password, mayChangeProof: MayChangePassProof)(implicit config: WithConfig): User = {
-    NamedDB(config.db.symbol).autoCommit{implicit session =>
+    NamedDB(config.db.poolName).autoCommit{implicit session =>
       val password = BCrypt.hashpw(newpass.pass, BCrypt.gensalt())
       sql"UPDATE user SET password=$password WHERE id=${user.id}".executeUpdate().apply()
     }
@@ -191,7 +192,7 @@ object User {
   def addPermission(to: User,
                     permission: permissions.Permission,
                     mayChangePermsProof: MayChangePermsProof)(implicit config: WithConfig): User = {
-    NamedDB(config.db.symbol).autoCommit{implicit session =>
+    NamedDB(config.db.poolName).autoCommit{implicit session =>
       sql"INSERT INTO permission VALUES (${to.id}, ${permission.name})".execute().apply()
     }
     val user = getUserByID(to.id)
@@ -205,7 +206,7 @@ object User {
                        permission: permissions.Permission,
                        mayChangePermsProof: MayChangePermsProof)(implicit config: WithConfig): User = {
 
-    NamedDB(config.db.symbol).autoCommit{implicit session =>
+    NamedDB(config.db.poolName).autoCommit{implicit session =>
       sql"DELETE FROM permission WHERE user_id=${from.id} AND permission=${permission.name}".execute().apply()
     }
 

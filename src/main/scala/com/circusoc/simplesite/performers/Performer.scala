@@ -98,7 +98,7 @@ object Performer {
 
 case class Skill(skill: String) extends AnyVal
 case class PictureFromID(id: Long) {
-  val url: URL = ???
+  def url(): URL = ???
 }
 
 object PictureFromID extends  {
@@ -172,7 +172,7 @@ object Skill extends DefaultJsonProtocol {
  * @param config the config we're after.
  */
 class PictureFromIDJsonFormatter(implicit config: WithConfig) extends RootJsonFormat[PictureFromID] with DefaultJsonProtocol {
-  def write(link: PictureFromID) = JsString(link.url.toExternalForm)
+  def write(link: PictureFromID) = JsString(link.url().toExternalForm)
   def read(value: JsValue) = value match {
     case JsString(v) => PictureFromID.fromURL(new URL(v))
     case _ => deserializationError("URL expected")

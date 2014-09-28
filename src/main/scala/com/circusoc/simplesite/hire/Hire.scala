@@ -7,6 +7,7 @@ import ExecutionContext.Implicits.global
 import org.codemonkey.simplejavamail.Email
 import javax.mail.Message.RecipientType
 import org.slf4j.LoggerFactory
+import spray.json.{RootJsonWriter, RootJsonReader, DefaultJsonProtocol}
 
 object Hire {
   val logger = LoggerFactory.getLogger(Hire.getClass.getName)
@@ -83,3 +84,14 @@ object Hire {
 
 case class EmailAddress(email: String) extends AnyVal
 case class Location(location: String) extends AnyVal
+
+
+
+case class HireRequest(email: String, location: Option[String], skills: List[String])
+// $COVERAGE-OFF$
+object HireRequestJsonSupport extends DefaultJsonProtocol {
+  implicit val hireJsonReader: RootJsonReader[HireRequest] = jsonFormat3(HireRequest)
+  implicit val hireJsonWriter: RootJsonWriter[HireRequest] = jsonFormat3(HireRequest)
+}
+// $COVERAGE-ON$
+

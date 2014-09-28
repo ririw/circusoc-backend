@@ -23,12 +23,4 @@ trait HireService extends HttpService with SprayJsonSupport {
       }
     }
   }
-
-  case class HireRequest(email: String, location: Option[String], skills: List[String])
-  object HireRequestJsonSupport extends DefaultJsonProtocol {
-    implicit val hireJsonReader: RootJsonReader[HireRequest] = jsonFormat3(HireRequest)
-    implicit val hireJsonWriter: RootJsonWriter[HireRequest] = jsonFormat3(HireRequest)
-  }
-
-
 }

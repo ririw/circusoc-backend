@@ -13,8 +13,9 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import org.codemonkey.simplejavamail.{Mailer, Email}
 import org.scalatest.Matchers._
+import org.scalatest.prop.PropertyChecks
 
-class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
+class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with PropertyChecks {
   val config = new PartialConfig({_ => Unit})
 
   def getJDBC(): Connection = {
@@ -31,7 +32,7 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 
   override def getDataSet: IDataSet = new FlatXmlDataSetBuilder().
     build(classOf[HireSpec].
-    getResourceAsStream("/com/circusoc/simplesite/users/UserDBSpec.xml"))
+    getResourceAsStream("/com/circusoc/simplesite/hire/HireDBSpec.xml"))
 
   it should "send emails and delete their log entries" in {
     var sends = 0

@@ -13,6 +13,20 @@ object DBSetup {
                                       email VARCHAR(100) NOT  NULL,
                                       location VARCHAR(100))""".execute()()
       sql"""CREATE TABLE hirerequest_skill (hirerequest_id INTEGER NOT NULL, skill VARCHAR(100))""".execute()()
+      sql"""CREATE TABLE performer (
+        id INTEGER PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        profile_picture_id INTEGER NOT NULL,
+        shown BOOLEAN
+      )""".execute()
+      sql"""CREATE TABLE performer_skill (
+        performer_id INTEGER NOT NULL,
+        skill VARCHAR(100) NOT NULL
+      )""".execute()
+      sql"""CREATE TABLE performer_picture (
+        performer_id INTEGER NOT NULL,
+        picture_id INTEGER NOT NULL
+      )""".execute()
     }
   }
 }

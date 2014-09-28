@@ -81,7 +81,7 @@ object Performer {
   def getPerformerByID(id: Long)(implicit config: WithConfig): Option[Performer] = {
     val performerDetails = NamedDB(config.db.poolName).readOnly{implicit session =>
       val perfTableCollection = sql"""
-        SELECT id, name, profile_picture_id, shown
+        SELECT id, name, profile_picture_id, shown FROM performer
         WHERE id=$id
       """.foldLeft(PerformerBuilder())(buildFromPerformerTable)
       val skillTableCollection = sql"""

@@ -1,3 +1,21 @@
 <dataset>
+    <performer id="1" name="steve" profile_picture_id="1" shown="false"></performer>
+    <performer_skill performer_id="1" skill="fire"></performer_skill>
+    <performer_skill performer_id="1" skill="acro"></performer_skill>
+    <performer_picture performer_id="1" picture_id="2"></performer_picture>
+
+
+    <performer id="2" name="dale" profile_picture_id="2" shown="true"></performer>
+    <performer_skill performer_id="2" skill="badminton"></performer_skill>
+    <performer_picture performer_id="2" picture_id="3"></performer_picture>
+    <performer_picture performer_id="2" picture_id="4"></performer_picture>
+
+    <performer id="3" name="leela" profile_picture_id="4" shown="true"></performer>
+    <performer_picture performer_id="3" picture_id="5"></performer_picture>
+
+    <performer id="4" name="Carla" profile_picture_id="6" shown="false"></performer>
+    <performer_skill performer_id="4" skill="fire"></performer_skill>
+
+    <performer id="5" name="Alexa" profile_picture_id="7" shown="true"></performer>
 </dataset>
 

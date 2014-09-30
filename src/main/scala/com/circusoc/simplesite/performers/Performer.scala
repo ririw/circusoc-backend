@@ -98,12 +98,14 @@ object Performer {
 
 case class Skill(skill: String) extends AnyVal
 case class PictureFromID(id: Long) {
-  def url(): URL = ???
+    def url()(implicit config: WithConfig): URL = new URL(s"http://example.com/$id")
 }
 
 object PictureFromID extends  {
-  def fromURL(url: URL)(implicit config: WithConfig) = ???
-  def fromID(id: Long)(implicit config: WithConfig) = ???
+  def fromURL(url: URL)(implicit config: WithConfig): PictureFromID = {
+    assert(url.getHost == "example.com")
+    PictureFromID(url.getPath.tail.toInt)
+  }
 }
 
 
@@ -119,7 +121,7 @@ class PerformerJsonFormat(implicit config: WithConfig) extends RootJsonFormat[Pe
   def write(performer: Performer) =
     JsObject(
       "id" -> JsNumber(performer.id),
-      "username" -> JsString(performer.name),
+      "name" -> JsString(performer.name),
       "skills" -> performer.skills.toJson,
       "profile_picture" -> performer.profilePicture.toJson,
       "other_pictures" -> performer.otherPictures.toJson,

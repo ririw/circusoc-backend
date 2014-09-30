@@ -113,4 +113,129 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       }
     }
   }
+
+  "the performer serialization code" should "serialize a full performer" in {
+    import spray.json._
+    implicit val implperf = new PerformerJsonFormat()
+    val steve = Performer.getPerformerByID(1).get.toJson
+
+    val expected = JsObject(
+      "id" -> JsNumber(1),
+      "name" -> JsString("steve"),
+      "skills" -> JsArray(JsString("fire"), JsString("acro")),
+      "profile_picture" -> JsString("http://example.com/1"),
+      "other_pictures" -> JsArray(JsString("http://example.com/2")),
+      "shown" -> JsBoolean(false)
+    )
+    steve should be(expected)
+  }
+  "the performer serialization code" should "serialize another performer" in {
+    import spray.json._
+    implicit val implperf = new PerformerJsonFormat()
+    val dale = Performer.getPerformerByID(2).get.toJson
+
+    val expected = JsObject(
+      "id" -> JsNumber(2),
+      "name" -> JsString("dale"),
+      "skills" -> JsArray(JsString("badminton")),
+      "profile_picture" -> JsString("http://example.com/2"),
+      "other_pictures" -> JsArray(
+        JsString("http://example.com/3"),
+        JsString("http://example.com/4")),
+      "shown" -> JsBoolean(true)
+    )
+    dale should be(expected)
+  }
+  "The deserialization code" should "deserialize a performer" in {
+    import spray.json._
+    implicit val implperf = new PerformerJsonFormat()
+    val performer =
+      """
+        |{
+        |  "id":3,
+        |  "name":"scarlet",
+        |  "skills":["contortion", "burlesque"],
+        |  "profile_picture":"http://example.com/4",
+        |  "other_pictures":["http://example.com/5"],
+        |  "shown":true
+        |}
+      """.stripMargin.parseJson.convertTo[Performer]
+    performer.id should be(3)
+    performer.name should be("scarlet")
+    performer.skills should be(Set(Skill("contortion"), Skill("burlesque")))
+    performer.profilePicture should be(PictureFromID(4))
+    performer.otherPictures should be(Set(PictureFromID(5)))
+    performer.shown should be(true)
+  }
+  it should "deserialize a boring performer" in {
+    import spray.json._
+    implicit val implperf = new PerformerJsonFormat()
+    val performer =
+      """
+        |{
+        |  "id":3,
+        |  "name":"scarlet",
+        |  "skills":[],
+        |  "profile_picture":"http://example.com/4",
+        |  "other_pictures":[],
+        |  "shown":true
+        |}
+      """.stripMargin.parseJson.convertTo[Performer]
+    performer.id should be(3)
+    performer.name should be("scarlet")
+    performer.skills should be(Set())
+    performer.profilePicture should be(PictureFromID(4))
+    performer.otherPictures should be(Set())
+    performer.shown should be(true)
+  }
+  it should "Not deserialize bad performers" in {
+    import spray.json._
+    implicit val implperf = new PerformerJsonFormat()
+    intercept[spray.json.DeserializationException] {
+      val performer =
+        """
+        |{
+        |  "id":3,
+        |  "name":"scarlet",
+        |  "profile_picture":"http://example.com/4",
+        |  "shown":true
+        |}
+      """.
+          stripMargin.parseJson.convertTo[Performer]
+    }
+    intercept[spray.json.DeserializationException] {
+      val performer =
+        "1".parseJson.convertTo[Performer]
+    }
+
+  }
+  it should "deserialize skills" in {
+    import spray.json._
+    implicit val implSkill = Skill.SkillJsonFormat
+    val skill1 = "\"fire\""
+    skill1.parseJson.convertTo[Skill] should be(Skill("fire"))
+    val skill2 = "1"
+    intercept[spray.json.DeserializationException] {
+      skill2.parseJson.convertTo[Skill]
+    }
+  }
+  it should "deserialize pictures" in {
+    import spray.json._
+    implicit val implSkill = new PictureFromIDJsonFormatter()
+    val pic1 = "\"http://example.com/4\""
+    pic1.parseJson.convertTo[PictureFromID] should be(PictureFromID(4))
+    val pic2 = "1"
+    intercept[spray.json.DeserializationException] {
+      pic2.parseJson.convertTo[PictureFromID]
+    }
+    val pic3 = "\"http://reddit.com/4\""
+    intercept[AssertionError] {
+      pic3.parseJson.convertTo[PictureFromID]
+    }
+
+    val pic4 = "\"http://example.com/derp\""
+    intercept[java.lang.NumberFormatException] {
+      pic4.parseJson.convertTo[PictureFromID]
+    }
+  }
 }

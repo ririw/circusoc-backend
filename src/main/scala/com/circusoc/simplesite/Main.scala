@@ -6,15 +6,21 @@ import org.codemonkey.simplejavamail.{Mailer, Email}
 import com.circusoc.simplesite.hire.HireService
 import com.circusoc.simplesite.pictures.PictureService
 import com.circusoc.simplesite.auth.AuthService
+import spray.routing.directives.CachingDirectives
 
-object Main extends App with SimpleRoutingApp with Core with AuthService with HireService with PictureService {
+object Main extends App
+            with SimpleRoutingApp
+            with Core
+            with AuthService
+            with HireService
+            with PictureService {
   implicit val system = ActorSystem("my-system")
   config.db.setup()
   startServer(interface = "localhost", port = 8080) {
     path("hello") {
       get {
         complete {
-          <h1>Say hello to spray</h1>
+          "Say hello to spray"
         }
       }
     } ~

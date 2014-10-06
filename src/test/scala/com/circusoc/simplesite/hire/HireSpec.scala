@@ -1,4 +1,4 @@
-package com.circusoc.simplesite.hire
+  package com.circusoc.simplesite.hire
 
 import org.dbunit.DBTestCase
 import org.scalatest.{BeforeAndAfter, FlatSpecLike}
@@ -128,4 +128,5 @@ class PartialConfig(mockMailer: Email => Unit) extends WithConfig {
   override val mailer: MailerLike = new MailerLike{
     override def sendMail(email: Email): Unit = mockMailer(email)
   }
+  override val paths: PathConfig = new PathConfig {}
 }

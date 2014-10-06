@@ -31,6 +31,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     override val mailer: MailerLike = new MailerLike {
       override def sendMail(email: Email): Unit = throw new NotImplementedError()
     }
+    override val paths: PathConfig = new PathConfig {}
   }
 
   def getJDBC: Connection = {
@@ -124,8 +125,8 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       "id" -> JsNumber(1),
       "name" -> JsString("steve"),
       "skills" -> JsArray(JsString("fire"), JsString("acro")),
-      "profile_picture" -> JsString("http://example.com/1"),
-      "other_pictures" -> JsArray(JsString("http://example.com/2")),
+      "profile_picture" -> JsString("https://localhost:5050/picture/1"),
+      "other_pictures" -> JsArray(JsString("https://localhost:5050/picture/2")),
       "shown" -> JsBoolean(false)
     )
     steve should be(expected)
@@ -139,10 +140,10 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       "id" -> JsNumber(2),
       "name" -> JsString("dale"),
       "skills" -> JsArray(JsString("badminton")),
-      "profile_picture" -> JsString("http://example.com/2"),
+      "profile_picture" -> JsString("https://localhost:5050/picture/2"),
       "other_pictures" -> JsArray(
-        JsString("http://example.com/3"),
-        JsString("http://example.com/4")),
+        JsString("https://localhost:5050/picture/3"),
+        JsString("https://localhost:5050/picture/4")),
       "shown" -> JsBoolean(true)
     )
     dale should be(expected)
@@ -156,8 +157,8 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |  "id":3,
         |  "name":"scarlet",
         |  "skills":["contortion", "burlesque"],
-        |  "profile_picture":"http://example.com/4",
-        |  "other_pictures":["http://example.com/5"],
+        |  "profile_picture":"https://localhost:5050/picture/4",
+        |  "other_pictures":["https://localhost:5050/picture/5"],
         |  "shown":true
         |}
       """.stripMargin.parseJson.convertTo[Performer]
@@ -177,7 +178,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |  "id":3,
         |  "name":"scarlet",
         |  "skills":[],
-        |  "profile_picture":"http://example.com/4",
+        |  "profile_picture":"https://localhost:5050/picture/4",
         |  "other_pictures":[],
         |  "shown":true
         |}
@@ -198,7 +199,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |{
         |  "id":3,
         |  "name":"scarlet",
-        |  "profile_picture":"http://example.com/4",
+        |  "profile_picture":"https://localhost:5050/picture/4",
         |  "shown":true
         |}
       """.
@@ -220,23 +221,5 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       skill2.parseJson.convertTo[Skill]
     }
   }
-  it should "deserialize pictures" in {
-    import spray.json._
-    implicit val implSkill = new PictureJsonFormatter()
-    val pic1 = "\"http://example.com/4\""
-    pic1.parseJson.convertTo[Picture] should be(Picture(4))
-    val pic2 = "1"
-    intercept[spray.json.DeserializationException] {
-      pic2.parseJson.convertTo[Picture]
-    }
-    val pic3 = "\"http://reddit.com/4\""
-    intercept[AssertionError] {
-      pic3.parseJson.convertTo[Picture]
-    }
 
-    val pic4 = "\"http://example.com/derp\""
-    intercept[java.lang.NumberFormatException] {
-      pic4.parseJson.convertTo[Picture]
-    }
-  }
 }

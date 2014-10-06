@@ -37,6 +37,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     override val mailer: MailerLike = new MailerLike {
       override def sendMail(email: Email): Unit = ???
     }
+    override val paths: PathConfig = new PathConfig {}
   }
   def getJDBC(): Connection = {
     Class.forName("org.h2.Driver")
@@ -146,6 +147,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
       override val mailer: MailerLike = new MailerLike {
         override def sendMail(email: Email): Unit = ???
       }
+      override val paths: PathConfig = new PathConfig {}
     }
     intercept[AssertionError] {
       User.MayChangePassProof.isTest(prod_config)

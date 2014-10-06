@@ -49,6 +49,7 @@ trait Core {
       }
       //mailer.sendMail(email)
     }
+    override val paths: PathConfig = new PathConfig {}
   }
 
   protected implicit def system: ActorSystem

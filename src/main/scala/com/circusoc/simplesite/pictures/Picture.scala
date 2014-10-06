@@ -15,14 +15,20 @@ import scala.util.{Failure, Success, Try}
 
 case class Picture(id: Long) {
   def url()(implicit config: WithConfig): URL = new URL(config.paths.baseUrl.toExternalForm + s"/picture/$id")
-  def cndurl()(implicit config: WithConfig): URL = new URL(config.paths.cdnUrl.toExternalForm + s"/picture/$id")
+  def cdnUrl()(implicit config: WithConfig): URL = new URL(config.paths.cdnUrl.toExternalForm + s"/picture/$id")
   def get()(implicit config: WithConfig): Option[PictureResult] = Picture.getPicture(this)
 }
 
 object Picture extends  {
   def fromURL(url: URL)(implicit config: WithConfig): Picture = {
-    assert(url.getHost == "example.com")
-    Picture(url.getPath.tail.toInt)
+    assert(url.getHost == config.paths.baseUrl.getHost)
+    assert(url.getPort == config.paths.baseUrl.getPort)
+    assert(url.getProtocol == config.paths.baseUrl.getProtocol)
+    assert(url.getPath.startsWith("/picture/"))
+    val idStartsAt = url.getPath.lastIndexOf('/')
+    assert(idStartsAt + 1 == "/picture/".length)
+    assert(idStartsAt+1 < url.getPath.length, "ID not found")
+    Picture(url.getPath.substring(idStartsAt+1).toLong)
   }
 
   def getPicture(picture: Picture)(implicit config: WithConfig): Option[PictureResult] = {
@@ -89,23 +95,18 @@ case class PictureResult(data: Array[Byte], mediaType: MediaType) {
 }
 
 object PictureResult {
-  def apply(data: InputStream, media: MediaType): PictureResult = {
-    val dat = Stream.continually(data.read).takeWhile(_ != -1).map(_.toByte).toArray
-   PictureResult(dat, media)
-  }
   def apply(data: InputStream): Try[PictureResult] = {
     val dat = Stream.continually(data.read).takeWhile(_ != -1).map(_.toByte).toArray
     val is = new ByteArrayInputStream(dat)
     val mimeType = URLConnection.guessContentTypeFromStream(is)
     val foundMimetype = getMediaType(mimeType)
     foundMimetype.map { mediaType =>
-        PictureResult(data, mediaType)
+        PictureResult(dat, mediaType)
     }
   }
   private def validMediaTypes = Set(
     MediaTypes.`image/gif`,
     MediaTypes.`image/jpeg`,
-    MediaTypes.`image/pict`,
     MediaTypes.`image/png`
   )
 
@@ -114,7 +115,6 @@ object PictureResult {
     name match {
       case "image/gif"  => Success(MediaTypes.`image/gif`)
       case "image/jpeg" => Success(MediaTypes.`image/jpeg`)
-      case "image/pict" => Success(MediaTypes.`image/pict`)
       case "image/png"  => Success(MediaTypes.`image/png`)
       case _ =>
         Failure(new MediaTypeException("Invalid media type: " + name))

@@ -8,17 +8,18 @@ import Arbitrary._
 import Prop._
 import com.circusoc.simplesite.performers.Performer.PerformerBuilder
 import com.circusoc.simplesite.users.User.UserBuilder
+import com.circusoc.simplesite.pictures.Picture
 
 class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
   import SkillChecks._
-  import PictureFromIDChecks._
+  import PictureChecks._
   it should "build users" in {
     val user = PerformerBuilder()
     forAll {(id: Long,
              name: String,
              skills: Set[Skill],
-             profilePicture: PictureFromID,
-             otherPictures: Set[PictureFromID],
+             profilePicture: Picture,
+             otherPictures: Set[Picture],
              shown: Boolean
       ) =>
       val updatedWithThings = user.addId(id).addName(name).addProfilePicture(profilePicture).addShown(shown)
@@ -41,8 +42,8 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
     forAll {(id: Long,
              name: String,
              skills: Set[Skill],
-             profilePicture: PictureFromID,
-             otherPictures: Set[PictureFromID],
+             profilePicture: Picture,
+             otherPictures: Set[Picture],
              shown: Boolean
               ) =>
       val updatedWithThings = user.addId(id).addName(name).addProfilePicture(profilePicture).addShown(shown)
@@ -64,9 +65,9 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
   it should "not build id-less users" in {
     val nonUser = PerformerBuilder().
       addName("asd").
-      addPicture(PictureFromID(1)).
-      addPicture(PictureFromID(2)).
-      addProfilePicture(PictureFromID(3)).
+      addPicture(Picture(1)).
+      addPicture(Picture(2)).
+      addProfilePicture(Picture(3)).
       addShown(true).
       addSkill(Skill("lol")).
       addSkill(Skill("foo"))
@@ -75,9 +76,9 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
   it should "not build name-less users" in {
     val nonUser = PerformerBuilder().
       addId(1).
-      addPicture(PictureFromID(1)).
-      addPicture(PictureFromID(2)).
-      addProfilePicture(PictureFromID(3)).
+      addPicture(Picture(1)).
+      addPicture(Picture(2)).
+      addProfilePicture(Picture(3)).
       addShown(true).
       addSkill(Skill("lol")).
       addSkill(Skill("foo"))
@@ -87,8 +88,8 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
     val nonUser = PerformerBuilder().
       addId(1).
       addName("asd").
-      addPicture(PictureFromID(1)).
-      addPicture(PictureFromID(2)).
+      addPicture(Picture(1)).
+      addPicture(Picture(2)).
       addShown(true).
       addSkill(Skill("lol")).
       addSkill(Skill("foo"))
@@ -99,9 +100,9 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
     val nonUser = PerformerBuilder().
       addId(1).
       addName("asd").
-      addPicture(PictureFromID(1)).
-      addPicture(PictureFromID(2)).
-      addProfilePicture(PictureFromID(3)).
+      addPicture(Picture(1)).
+      addPicture(Picture(2)).
+      addProfilePicture(Picture(3)).
       addSkill(Skill("lol")).
       addSkill(Skill("foo"))
     intercept[AssertionError] {nonUser.build()}
@@ -110,15 +111,15 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
     val fullUser = PerformerBuilder().
       addId(1).
       addName("asd").
-      addPicture(PictureFromID(1)).
-      addPicture(PictureFromID(2)).
-      addProfilePicture(PictureFromID(3)).
+      addPicture(Picture(1)).
+      addPicture(Picture(2)).
+      addProfilePicture(Picture(3)).
       addShown(true).
       addSkill(Skill("lol")).
       addSkill(Skill("foo"))
     intercept[AssertionError] {fullUser.addId(2)}
     intercept[AssertionError] {fullUser.addName("fefesc")}
-    intercept[AssertionError] {fullUser.addProfilePicture(PictureFromID(4))}
+    intercept[AssertionError] {fullUser.addProfilePicture(Picture(4))}
     intercept[AssertionError] {fullUser.addShown(false)}
   }
 
@@ -130,8 +131,8 @@ object SkillChecks extends Properties("Skill") {
   implicit lazy val arbSkill: Arbitrary[Skill] = Arbitrary(genSkill)
 }
 
-object PictureFromIDChecks extends Properties("PictureFromID") {
-  lazy val genPicture: Gen[PictureFromID] = arbitrary[Long].map{v => labs(v) + 1}.map(PictureFromID(_))
-  implicit lazy val arbPicture: Arbitrary[PictureFromID] = Arbitrary(genPicture)
+object PictureChecks extends Properties("Picture") {
+  lazy val genPicture: Gen[Picture] = arbitrary[Long].map{v => labs(v) + 1}.map(Picture(_))
+  implicit lazy val arbPicture: Arbitrary[Picture] = Arbitrary(genPicture)
   def labs(v: Long): Long = if (v < 0) -v else v
 }

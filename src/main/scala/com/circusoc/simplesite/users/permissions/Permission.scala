@@ -16,10 +16,15 @@ case class CanChangePermissionsPermission() extends Permission {
   val name = "CanChangePermissionsPermission"
 }
 
+case class ModifyImagesPermission() extends Permission {
+  val name = "ModifyImagesPermission"
+}
+
 object Permission {
   def apply(name: String): Permission = {name match {
     case "ChangePasswordPermission" => ChangePasswordPermission()
     case "CanChangePermissionsPermission" => CanChangePermissionsPermission()
+    case "ModifyImagesPermission" => ModifyImagesPermission()
     case _ => throw new PermissionConstructionException(s"Invalid permission: $name")
   }}
 

@@ -6,8 +6,6 @@ import spray.json._
 import DefaultJsonProtocol._
 import spray.httpx.SprayJsonSupport
 
-// if you don't supply your own Protocol (see below)
-
 trait HireService extends HttpService with SprayJsonSupport {
   this: Core =>
   val hireRoutes = {

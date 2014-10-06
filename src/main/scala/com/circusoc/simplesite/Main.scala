@@ -5,8 +5,9 @@ import akka.actor.ActorSystem
 import com.circusoc.simplesite.users.Auth
 import org.codemonkey.simplejavamail.{Mailer, Email}
 import com.circusoc.simplesite.hire.HireService
+import com.circusoc.simplesite.pictures.PictureService
 
-object Main extends App with SimpleRoutingApp with Core with Auth with HireService {
+object Main extends App with SimpleRoutingApp with Core with Auth with HireService with PictureService {
   implicit val system = ActorSystem("my-system")
   config.db.setup()
   startServer(interface = "localhost", port = 8080) {
@@ -19,6 +20,7 @@ object Main extends App with SimpleRoutingApp with Core with Auth with HireServi
     } ~
     authroutes ~
     hireRoutes ~
+    pictureRoutes ~
     path("setup") {
       get {
         complete {
@@ -41,7 +43,11 @@ trait Core {
     override val hire: Hire = new Hire {}
     override val mailer: MailerLike = new MailerLike {
       val mailer = new Mailer(hire.smtpHost, hire.smtpPort, hire.smtpUser, hire.smtpPass)
-      override def sendMail(email: Email): Unit = mailer.sendMail(email)
+      override def sendMail(email: Email): Unit = {
+        Thread.sleep(500)
+        println("Sent mail")
+      }
+      //mailer.sendMail(email)
     }
   }
 

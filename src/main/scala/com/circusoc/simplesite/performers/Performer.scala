@@ -6,6 +6,7 @@ import scalikejdbc.NamedDB
 import com.circusoc.simplesite.WithConfig
 import scalikejdbc._
 import org.slf4j.LoggerFactory
+import com.circusoc.simplesite.pictures.{PictureJsonFormatter, Picture}
 
 
 /**
@@ -17,8 +18,8 @@ import org.slf4j.LoggerFactory
 case class Performer(id: Long,
                      name: String,
                      skills: Set[Skill],
-                     profilePicture: PictureFromID,
-                     otherPictures: Set[PictureFromID],
+                     profilePicture: Picture,
+                     otherPictures: Set[Picture],
                      shown: Boolean) {}
 
 object Performer {
@@ -26,8 +27,8 @@ object Performer {
     id: Option[Long] = None,
     name: Option[String] = None,
     skills: Set[Skill] = Set(),
-    profilePicture: Option[PictureFromID] = None,
-    otherPictures: Set[PictureFromID] = Set(),
+    profilePicture: Option[Picture] = None,
+    otherPictures: Set[Picture] = Set(),
     shown: Option[Boolean] = None
   ) {
     def addId(_id: Long) = {
@@ -39,8 +40,8 @@ object Performer {
       this.copy(name=Some(_name))
     }
     def addSkill(skill: Skill) = this.copy(skills=skills + skill)
-    def addPicture(picture: PictureFromID) = this.copy(otherPictures=otherPictures + picture)
-    def addProfilePicture(_profilePicture: PictureFromID) = {
+    def addPicture(picture: Picture) = this.copy(otherPictures=otherPictures + picture)
+    def addProfilePicture(_profilePicture: Picture) = {
       assert(profilePicture.isEmpty || profilePicture.get == _profilePicture)
       this.copy(profilePicture=Some(_profilePicture))
     }
@@ -65,7 +66,7 @@ object Performer {
     val name = rs.string("name")
     val profile_picture = rs.long("profile_picture_id")
     val shown = rs.boolean("shown")
-    pb.addId(id).addName(name).addProfilePicture(PictureFromID(profile_picture)).addShown(shown)
+    pb.addId(id).addName(name).addProfilePicture(Picture(profile_picture)).addShown(shown)
   }
   
   def buildFromSkillTable(pb: PerformerBuilder, rs: WrappedResultSet): PerformerBuilder = {
@@ -75,7 +76,7 @@ object Performer {
 
   def buildFromPictureTable(pb: PerformerBuilder, rs: WrappedResultSet): PerformerBuilder = {
     val picture = rs.long("picture_id")
-    pb.addPicture(PictureFromID(picture))
+    pb.addPicture(Picture(picture))
   }
   
   def getPerformerByID(id: Long)(implicit config: WithConfig): Option[Performer] = {
@@ -97,16 +98,6 @@ object Performer {
 }
 
 case class Skill(skill: String) extends AnyVal
-case class PictureFromID(id: Long) {
-    def url()(implicit config: WithConfig): URL = new URL(s"http://example.com/$id")
-}
-
-object PictureFromID extends  {
-  def fromURL(url: URL)(implicit config: WithConfig): PictureFromID = {
-    assert(url.getHost == "example.com")
-    PictureFromID(url.getPath.tail.toInt)
-  }
-}
 
 
 /**
@@ -117,7 +108,7 @@ object PictureFromID extends  {
 class PerformerJsonFormat(implicit config: WithConfig) extends RootJsonFormat[Performer] with DefaultJsonProtocol {
   import Skill.SkillJsonFormat._
 
-  implicit val pictureJsonFormatter = new PictureFromIDJsonFormatter()
+  implicit val pictureJsonFormatter = new PictureJsonFormatter()
   def write(performer: Performer) =
     JsObject(
       "id" -> JsNumber(performer.id),
@@ -142,8 +133,8 @@ class PerformerJsonFormat(implicit config: WithConfig) extends RootJsonFormat[Pe
       performerFields match {
         case Some((JsNumber(id), JsString(name), JsArray(_skills), _profilePic, JsArray(_otherPics), JsBoolean(shown))) =>
           val skills = _skills.map(_.convertTo[Skill]).toSet
-          val performerPic = _profilePic.convertTo[PictureFromID]
-          val otherPics = _otherPics.map(_.convertTo[PictureFromID]).toSet
+          val performerPic = _profilePic.convertTo[Picture]
+          val otherPics = _otherPics.map(_.convertTo[Picture]).toSet
           Performer(id.toLong, name, skills, performerPic, otherPics, shown)
         case _ => deserializationError("Perfomer expected")
       }
@@ -158,25 +149,5 @@ object Skill extends DefaultJsonProtocol {
       case JsString(v) => Skill(v)
       case _ => deserializationError("Skill expected")
     }
-  }
-}
-
-
-/**
- * The picture formatter. This is instantiated as a class so you can
- * get the config, which happens in the usual implicit config way.
- * Just do:
- *
- *  implicit val config = something
- *  ...
- *  implicit val PictureFromIDJsonFormatter = new PictureFromIDJsonFormatter()
- *
- * @param config the config we're after.
- */
-class PictureFromIDJsonFormatter(implicit config: WithConfig) extends RootJsonFormat[PictureFromID] with DefaultJsonProtocol {
-  def write(link: PictureFromID) = JsString(link.url().toExternalForm)
-  def read(value: JsValue) = value match {
-    case JsString(v) => PictureFromID.fromURL(new URL(v))
-    case _ => deserializationError("URL expected")
   }
 }

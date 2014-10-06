@@ -3,11 +3,13 @@ package com.circusoc.simplesite
 import java.sql.{Connection, DriverManager}
 import scalikejdbc._
 import org.codemonkey.simplejavamail.Email
+import java.net.URL
 
 trait WithConfig {
   val db: DB
   val hire: Hire
   val mailer: MailerLike
+  val paths: PathConfig
   val isProduction = false
 }
 
@@ -16,7 +18,8 @@ trait DB {
   def poolName: Symbol = 'production
   def setup() {
     Class.forName("org.h2.Driver")
-    ConnectionPool.add('production, "jdbc:h2:~/test", "sa", "")
+    ConnectionPool.add('production, "jdbc:h2:~/tmp/test", "sa", "")
+    // ConnectionPool.add('production, "jdbc:h2:mem:production;DB_CLOSE_DELAY=-1", "sa", "")
   }
 }
 
@@ -38,4 +41,8 @@ trait Hire {
 
 trait MailerLike {
   def sendMail(email: Email): Unit
+}
+trait PathConfig {
+  val baseUrl: URL = new URL("https://localhost:5050")
+  val cdnUrl: URL = baseUrl
 }

@@ -11,6 +11,7 @@ class PermissionsSpec extends FlatSpec with PropertyChecks {
   it should "Correctly find permissions" in {
     Permission.apply("ChangePasswordPermission") should be(ChangePasswordPermission())
     Permission.apply("CanChangePermissionsPermission") should be(CanChangePermissionsPermission())
+    Permission.apply("ModifyImagesPermission") should be(ModifyImagesPermission())
   }
 
   it should "Reject crazy permissions" in {
@@ -23,7 +24,8 @@ class PermissionsSpec extends FlatSpec with PropertyChecks {
     val validCombos = Table(
       "object" -> "str",
       ChangePasswordPermission() -> "ChangePasswordPermission",
-      CanChangePermissionsPermission() -> "CanChangePermissionsPermission"
+      CanChangePermissionsPermission() -> "CanChangePermissionsPermission",
+      ModifyImagesPermission() -> "ModifyImagesPermission"
     )
 
     forAll(validCombos) {

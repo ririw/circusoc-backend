@@ -12,6 +12,7 @@ import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
 import scalikejdbc.ConnectionPool
 import org.codemonkey.simplejavamail.Email
+import com.circusoc.simplesite.pictures.{PictureJsonFormatter, Picture}
 
 /**
  *
@@ -55,8 +56,8 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     steve.id should be(1)
     steve.name should be("steve")
     steve.skills should be(Set(Skill("fire"), Skill("acro")))
-    steve.profilePicture should be(PictureFromID(1))
-    steve.otherPictures should be(Set(PictureFromID(2)))
+    steve.profilePicture should be(Picture(1))
+    steve.otherPictures should be(Set(Picture(2)))
     steve.shown should be(false)
   }
 
@@ -66,10 +67,10 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     val dale = _dale.get
     dale.id should be(2)
     dale.name should be("dale")
-    dale.profilePicture should be(PictureFromID(2))
+    dale.profilePicture should be(Picture(2))
     dale.shown should be(true)
     dale.skills should be(Set(Skill("badminton")))
-    dale.otherPictures should be(Set(PictureFromID(3), PictureFromID(4)))
+    dale.otherPictures should be(Set(Picture(3), Picture(4)))
   }
 
   it should "get a performer that has no skills" in {
@@ -78,10 +79,10 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     val leela = _leela.get
     leela.id should be(3)
     leela.name should be("leela")
-    leela.profilePicture should be(PictureFromID(4))
+    leela.profilePicture should be(Picture(4))
     leela.shown should be(true)
     leela.skills should be(Set())
-    leela.otherPictures should be(Set(PictureFromID(5)))
+    leela.otherPictures should be(Set(Picture(5)))
   }
 
   it should "get a performer that has no pictures" in {
@@ -90,7 +91,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     val carla = _carla.get
     carla.id should be(4)
     carla.name should be("Carla")
-    carla.profilePicture should be(PictureFromID(6))
+    carla.profilePicture should be(Picture(6))
     carla.skills should be(Set(Skill("fire")))
     carla.otherPictures should be(Set())
   }
@@ -101,7 +102,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     val alexa = _alexa.get
     alexa.id should be(5)
     alexa.name should be("Alexa")
-    alexa.profilePicture should be(PictureFromID(7))
+    alexa.profilePicture should be(Picture(7))
     alexa.otherPictures should be(Set())
     alexa.skills should be(Set())
   }
@@ -163,8 +164,8 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     performer.id should be(3)
     performer.name should be("scarlet")
     performer.skills should be(Set(Skill("contortion"), Skill("burlesque")))
-    performer.profilePicture should be(PictureFromID(4))
-    performer.otherPictures should be(Set(PictureFromID(5)))
+    performer.profilePicture should be(Picture(4))
+    performer.otherPictures should be(Set(Picture(5)))
     performer.shown should be(true)
   }
   it should "deserialize a boring performer" in {
@@ -184,7 +185,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     performer.id should be(3)
     performer.name should be("scarlet")
     performer.skills should be(Set())
-    performer.profilePicture should be(PictureFromID(4))
+    performer.profilePicture should be(Picture(4))
     performer.otherPictures should be(Set())
     performer.shown should be(true)
   }
@@ -221,21 +222,21 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
   }
   it should "deserialize pictures" in {
     import spray.json._
-    implicit val implSkill = new PictureFromIDJsonFormatter()
+    implicit val implSkill = new PictureJsonFormatter()
     val pic1 = "\"http://example.com/4\""
-    pic1.parseJson.convertTo[PictureFromID] should be(PictureFromID(4))
+    pic1.parseJson.convertTo[Picture] should be(Picture(4))
     val pic2 = "1"
     intercept[spray.json.DeserializationException] {
-      pic2.parseJson.convertTo[PictureFromID]
+      pic2.parseJson.convertTo[Picture]
     }
     val pic3 = "\"http://reddit.com/4\""
     intercept[AssertionError] {
-      pic3.parseJson.convertTo[PictureFromID]
+      pic3.parseJson.convertTo[Picture]
     }
 
     val pic4 = "\"http://example.com/derp\""
     intercept[java.lang.NumberFormatException] {
-      pic4.parseJson.convertTo[PictureFromID]
+      pic4.parseJson.convertTo[Picture]
     }
   }
 }

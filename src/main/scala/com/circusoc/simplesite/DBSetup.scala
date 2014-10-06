@@ -31,6 +31,9 @@ object DBSetup {
         performer_id INTEGER NOT NULL,
         picture_id INTEGER NOT NULL
       )""".execute()()
+      sql"""CREATE TABLE picture (id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                                  mediatype VARCHAR(100),
+                                  picture BLOB)""".execute()()
     }
   }
 }

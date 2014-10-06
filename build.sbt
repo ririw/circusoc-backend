@@ -45,6 +45,4 @@ scalacOptions ++= Seq(
   "-encoding", "UTF-8"
 )
 
-testOptions += Tests.Argument(TestFrameworks.JUnit, "-v")
-
-//testOptions in Test += Tests.Argument("-oF")
+testOptions in Test += Tests.Argument("-oF")

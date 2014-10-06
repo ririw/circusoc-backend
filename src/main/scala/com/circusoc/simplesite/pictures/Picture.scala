@@ -35,7 +35,8 @@ object Picture extends  {
     NamedDB(config.db.poolName).readOnly { implicit session =>
       sql"""SELECT picture, mediatype FROM picture WHERE id=${picture.id}""".
         map{r => 
-          val data = Source.fromInputStream(r.blob(1).getBinaryStream).toArray.map(_.toByte)
+          val stream = r.blob(1).getBinaryStream
+          val data = Stream.continually(stream.read).takeWhile(_ != -1).toArray.map(_.toByte)
           val mediaType = PictureResult.getMediaType(r.string(2)).get
         PictureResult(data, mediaType)
         }.headOption().apply()
@@ -61,10 +62,12 @@ object Picture extends  {
       val exists = existsResult match {
         case Some(a) =>
           assert(a < 2)
-          a > 1
+          a >= 1
+        // $COVERAGE-OFF$
         case _ => false
+        // $COVERAGE-ON$
       }
-      sql"""DELETE FROM picture id=${picture.id}""".execute()()
+      if (exists) sql"""DELETE FROM picture WHERE id=${picture.id}""".execute()()
       exists
     }
   }
@@ -90,8 +93,16 @@ class PictureJsonFormatter()(implicit config: WithConfig) extends RootJsonFormat
   }
 }
 
-case class PictureResult(data: Array[Byte], mediaType: MediaType) {
+case class PictureResult(data: Array[Byte], mediaType: MediaType) extends Equals {
   assert(PictureResult.isValidMediaType(mediaType))
+  override def canEqual(that: Any): Boolean =
+    that.isInstanceOf[PictureResult]
+  override def equals(_that: Any): Boolean = _that match {
+    case that: PictureResult => that.canEqual(this) &&
+      that.mediaType == this.mediaType &&
+      this.data.deep == that.data.deep
+    case _ => false
+  }
 }
 
 object PictureResult {

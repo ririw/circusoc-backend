@@ -2,7 +2,7 @@ package com.circusoc.simplesite.pictures
 
 import org.dbunit.DBTestCase
 import org.scalatest.{BeforeAndAfter, FlatSpecLike}
-import org.scalatest.prop.PropertyChecks
+import org.scalatest.prop.{TableDrivenPropertyChecks, PropertyChecks}
 import com.circusoc.simplesite._
 import scalikejdbc.ConnectionPool
 import org.codemonkey.simplejavamail.Email
@@ -13,6 +13,8 @@ import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
 import java.net.URL
 import org.scalatest.Matchers._
+import spray.http.MediaTypes
+
 /**
  *
  */
@@ -111,6 +113,70 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
     intercept[java.lang.NumberFormatException] {
       pic4.parseJson.convertTo[Picture]
     }
+  }
+
+  it should "upload pictures" in {
+    val imageFiles = Table(
+      "File",
+      "test.png",
+      "test.jpg",
+      "test.gif"
+    )
+    TableDrivenPropertyChecks.forAll(imageFiles) {name: String =>
+      val picture = pictureFromTestFile(name)
+      val user = Misc.superuser
+      val resultPic = Picture.putPicture(picture, user)
+      val retrievedPic = Picture.getPicture(Picture(resultPic.id))
+      retrievedPic should be(Some(pictureFromTestFile(name)))
+    }
+  }
+
+  it should "delete pictures" in {
+    val imageFiles = Table(
+      "File",
+      "test.png",
+      "test.jpg",
+      "test.gif"
+    )
+    TableDrivenPropertyChecks.forAll(imageFiles) {name: String =>
+      val picture = pictureFromTestFile(name)
+      val user = Misc.superuser
+      val resultPic = Picture.putPicture(picture, user)
+      val retrievedPic = Picture.getPicture(Picture(resultPic.id))
+      retrievedPic should be(Some(pictureFromTestFile(name)))
+
+      val result = Picture.deletePicture(Picture(resultPic.id), user)
+      result should be(true)
+
+      val unretrievedPic = Picture.getPicture(Picture(resultPic.id))
+      unretrievedPic should be(None)
+    }
+  }
+
+  it should "also retrieve pictures through the picture object" in {
+    val imageFiles = Table(
+      "File",
+      "test.png",
+      "test.jpg",
+      "test.gif"
+    )
+    TableDrivenPropertyChecks.forAll(imageFiles) {
+      name: String =>
+        val picture = pictureFromTestFile(name)
+        val user = Misc.superuser
+        val resultPic = Picture.putPicture(picture, user)
+        val retrievedPic = Picture(resultPic.id).get()
+        retrievedPic should be(Some(pictureFromTestFile(name)))
+    }
+  }
+
+  it should "not delete non-existent images" in {
+    val result = Picture.deletePicture(Picture(10000), Misc.superuser)
+    result should be(false)
+  }
+
+  def pictureFromTestFile(filename: String): PictureResult = {
+    PictureResult(classOf[PictureResultSpec].getResourceAsStream(s"/com/circusoc/simplesite/pictures/$filename")).get
   }
 }
 

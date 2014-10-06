@@ -80,7 +80,8 @@ class PictureResultSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter
   }
 
   def pictureFromTestFile(filename: String): PictureResult = {
-    PictureResult(classOf[PictureResultSpec].getResourceAsStream(s"/com/circusoc/simplesite/pictures/$filename")).get
+    PictureResult(classOf[PictureResultSpec].
+      getResourceAsStream(s"/com/circusoc/simplesite/pictures/$filename")).get
   }
 
   it should "only allow a subset of media types" in {
@@ -114,5 +115,37 @@ class PictureResultSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter
       case _ => Unit
     }
   }
+  it should "reject improper media types" in {
+    intercept[AssertionError] {
+      PictureResult(Array(1, 2, 3, 4).map(_.toByte), MediaTypes.`application/atom+xml`)
+    }
+  }
+
+  it should "compare correctly" in {
+    val a = PictureResult(Array(1, 2, 3, 4).map(_.toByte), MediaTypes.`image/png`)
+    val b = PictureResult(Array(1, 2, 3, 4).map(_.toByte), MediaTypes.`image/png`)
+    a should be(b); b should be(a)
+    val c = PictureResult(Array(1, 2, 3, 4).map(_.toByte), MediaTypes.`image/jpeg`)
+    a should not be c; c should not be a
+    val d = PictureResult(Array(1, 2, 3, 4, 5).map(_.toByte), MediaTypes.`image/jpeg`)
+    a should not be d; d should not be c
+    val derp = new Integer(1)
+    a should not be derp; derp should not be a
+    class SillyExtender(_data: Array[Byte], _media: MediaType) extends PictureResult(_data, _media)
+    val e = new SillyExtender(Array(1, 2, 3, 4).map(_.toByte), MediaTypes.`image/png`) {
+      override def canEqual(that: Any): Boolean = that.isInstanceOf[SillyExtender]
+      override def equals(_that: Any): Boolean = _that match {
+        case that: SillyExtender => that.canEqual(this) &&
+          that.mediaType == this.mediaType &&
+          this.data.deep == that.data.deep
+        case _ => false
+      }
+    }
+    e.asInstanceOf[PictureResult] should not be a
+    a should not be e.asInstanceOf[PictureResult]
+    a should not be e
+    e should not be a
+  }
 }
+
 

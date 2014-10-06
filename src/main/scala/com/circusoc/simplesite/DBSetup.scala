@@ -34,6 +34,9 @@ object DBSetup {
       sql"""CREATE TABLE picture (id INTEGER PRIMARY KEY AUTO_INCREMENT,
                                   mediatype VARCHAR(100),
                                   picture BLOB)""".execute()()
+      sql"""CREATE TABLE token (userid INTEGER,
+                                token VARCHAR(100),
+                                created TIMESTAMP DEFAULT current_timestamp)""".execute()()
     }
   }
 }

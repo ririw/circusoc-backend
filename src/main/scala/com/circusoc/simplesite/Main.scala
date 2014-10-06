@@ -2,12 +2,12 @@ package com.circusoc.simplesite
 
 import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
-import com.circusoc.simplesite.users.Auth
 import org.codemonkey.simplejavamail.{Mailer, Email}
 import com.circusoc.simplesite.hire.HireService
 import com.circusoc.simplesite.pictures.PictureService
+import com.circusoc.simplesite.auth.AuthService
 
-object Main extends App with SimpleRoutingApp with Core with Auth with HireService with PictureService {
+object Main extends App with SimpleRoutingApp with Core with AuthService with HireService with PictureService {
   implicit val system = ActorSystem("my-system")
   config.db.setup()
   startServer(interface = "localhost", port = 8080) {

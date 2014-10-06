@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   "io.spray"            % "spray-can"        % "1.2-20130712",
   "io.spray"            % "spray-routing"    % "1.2-20130712",
   "io.spray"           %% "spray-json"       % "1.2.6",
-  "org.scalatest"      %% "scalatest"        % "2.1.6"            % "test",
+  "org.scalatest"      %% "scalatest"        % "2.2.2"            % "test",
   "org.scalacheck"     %% "scalacheck"       % "1.11.5"           % "test",
   "io.spray"            % "spray-testkit"    % "1.2-20130712"     % "test",
   "com.typesafe.akka"  %% "akka-testkit"     % "2.2.0"            % "test",
@@ -45,4 +45,4 @@ scalacOptions ++= Seq(
   "-encoding", "UTF-8"
 )
 
-testOptions in Test += Tests.Argument("-oF")
+// testOptions in Test += Tests.Argument("-oF")

@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
  *
  *  It includes access control and authentication methods.
  */
-class User(val id: Int, val username: String, val userPermissions: Set[permissions.Permission])
+class User(val id: Long, val username: String, val userPermissions: Set[permissions.Permission])
   extends Equals {
   def hasPermission(permission: permissions.Permission): Boolean = userPermissions.contains(permission)
   def addPermission(permission: permissions.Permission,
@@ -51,7 +51,7 @@ class User(val id: Int, val username: String, val userPermissions: Set[permissio
 }
 
 class  AuthenticatedUser(
-  _id: Int,
+  _id: Long,
   _username: String,
   _permissions: Set[permissions.Permission])
   extends User(_id, _username, _permissions) with Equals {
@@ -92,7 +92,7 @@ object User {
     }
   }
 
-  def getUserByID(id: Int)(implicit config: WithConfig): Option[User] = {
+  def getUserByID(id: Long)(implicit config: WithConfig): Option[User] = {
     val builder = NamedDB(config.db.poolName).readOnly{implicit session =>
       sql"""
         SELECT

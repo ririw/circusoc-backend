@@ -4,16 +4,16 @@ import spray.routing.HttpService
 import com.circusoc.simplesite.Core
 import spray.http._
 import spray.http.HttpResponse
-import com.circusoc.simplesite.users.Auth
 import com.circusoc.simplesite.users.permissions.ModifyImagesPermission
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.io.ByteArrayInputStream
 import spray.json._
 import java.nio.file.Files
 import scala.util.{Try, Success, Failure}
+import com.circusoc.simplesite.auth.{Auth, AuthService}
 
 trait PictureService extends HttpService {
-  this: Core with Auth =>
+  this: Core with AuthService =>
   implicit val picFormatter = new PictureJsonFormatter()
   val pictureRoutes = {
     path("picture") {

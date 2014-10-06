@@ -61,7 +61,8 @@ object Hire {
       emailLoc match {
         case None => Unit
         case Some((clientEmail, location)) =>
-          val skills = sql"""select skill from hirerequest_skill where hirerequest_id=$id""".map(_.string(1)).toList()()
+          val skills = sql"""select skill from hirerequest_skill where hirerequest_id=$id""".
+            map(_.string(1)).toList()()
           sql"""delete from hirerequest where id=$id""".execute()()
           sql"""delete from hirerequest_skill where hirerequest_id=$id""".execute()()
           val email = new Email()

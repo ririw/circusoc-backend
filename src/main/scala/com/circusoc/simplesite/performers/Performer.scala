@@ -105,7 +105,9 @@ case class Skill(skill: String) extends AnyVal
  * This needs to be instantiated as a class because it depends on the picture formatter.
  * @param config
  */
-class PerformerJsonFormat(implicit config: WithConfig) extends RootJsonFormat[Performer] with DefaultJsonProtocol {
+class PerformerJsonFormat(implicit config: WithConfig)
+  extends RootJsonFormat[Performer]
+  with DefaultJsonProtocol {
   import Skill.SkillJsonFormat._
 
   implicit val pictureJsonFormatter = new PictureJsonFormatter()
@@ -131,7 +133,12 @@ class PerformerJsonFormat(implicit config: WithConfig) extends RootJsonFormat[Pe
         shown <- fields.get("shown")
       } yield (id, username, skills, profilePicture, otherPictures, shown)
       performerFields match {
-        case Some((JsNumber(id), JsString(name), JsArray(_skills), _profilePic, JsArray(_otherPics), JsBoolean(shown))) =>
+        case Some((JsNumber(id),
+                   JsString(name),
+                   JsArray(_skills),
+                   _profilePic,
+                   JsArray(_otherPics),
+                   JsBoolean(shown))) =>
           val skills = _skills.map(_.convertTo[Skill]).toSet
           val performerPic = _profilePic.convertTo[Picture]
           val otherPics = _otherPics.map(_.convertTo[Picture]).toSet

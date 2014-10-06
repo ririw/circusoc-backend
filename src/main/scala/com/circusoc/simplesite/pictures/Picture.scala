@@ -85,7 +85,8 @@ object Picture extends  {
  *
  * @param config the config we're after.
  */
-class PictureJsonFormatter()(implicit config: WithConfig) extends RootJsonFormat[Picture] with DefaultJsonProtocol {
+class PictureJsonFormatter()(implicit config: WithConfig)
+  extends RootJsonFormat[Picture] with DefaultJsonProtocol {
   def write(link: Picture) = JsString(link.url().toExternalForm)
   def read(value: JsValue) = value match {
     case JsString(v) => Picture.fromURL(new URL(v))

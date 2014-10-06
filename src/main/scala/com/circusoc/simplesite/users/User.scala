@@ -16,7 +16,8 @@ import org.slf4j.LoggerFactory
  *
  *  It includes access control and authentication methods.
  */
-class User(val id: Int, val username: String, val userPermissions: Set[permissions.Permission]) extends Equals {
+class User(val id: Int, val username: String, val userPermissions: Set[permissions.Permission])
+  extends Equals {
   def hasPermission(permission: permissions.Permission): Boolean = userPermissions.contains(permission)
   def addPermission(permission: permissions.Permission,
                     changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
@@ -54,7 +55,8 @@ class  AuthenticatedUser(
   _username: String,
   _permissions: Set[permissions.Permission])
   extends User(_id, _username, _permissions) with Equals {
-  override def changePassword(newPassword: Password, changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
+  override def changePassword(newPassword: Password, changingUser: AuthenticatedUser)
+                             (implicit config: WithConfig): User = {
     User.changePassword(this, newPassword, User.MayChangePassProof.isChangingUser(this, changingUser))
   }
 
@@ -165,7 +167,8 @@ object User {
       }
     }
   }
-  def changePassword(user: User, newpass: Password, mayChangeProof: MayChangePassProof)(implicit config: WithConfig): User = {
+  def changePassword(user: User, newpass: Password, mayChangeProof: MayChangePassProof)
+                    (implicit config: WithConfig): User = {
     NamedDB(config.db.poolName).autoCommit{implicit session =>
       val password = BCrypt.hashpw(newpass.pass, BCrypt.gensalt())
       sql"UPDATE user SET password=$password WHERE id=${user.id}".executeUpdate().apply()
@@ -197,7 +200,8 @@ object User {
     }
     val user = getUserByID(to.id)
     // $COVERAGE-OFF$
-    assert(user.isDefined, "Invalid state - we added a permission, but couldn't find the user in the db afterwards.")
+    assert(user.isDefined, "Invalid state - we added a permission, " +
+      "but couldn't find the user in the db afterwards.")
     // $COVERAGE-ON$
     user.get
   }
@@ -207,12 +211,14 @@ object User {
                        mayChangePermsProof: MayChangePermsProof)(implicit config: WithConfig): User = {
 
     NamedDB(config.db.poolName).autoCommit{implicit session =>
-      sql"DELETE FROM permission WHERE user_id=${from.id} AND permission=${permission.name}".execute().apply()
+      sql"DELETE FROM permission WHERE user_id=${from.id} AND permission=${permission.name}".
+        execute().apply()
     }
 
     val user = getUserByID(from.id)
     // $COVERAGE-OFF$
-    assert(user.isDefined, "Invalid state - we removed a permission, but couldn't find the user in the db afterwards.")
+    assert(user.isDefined, "Invalid state - we removed a permission," +
+      " but couldn't find the user in the db afterwards.")
     // $COVERAGE-ON$
     user.get
   }
@@ -245,7 +251,8 @@ object User {
           } yield (id, username, permissions)
           userFields match {
             case Some((JsNumber(id), JsString(name), JsArray(_perms))) =>
-              val perms = _perms.map(p => permissions.Permission.PermissionJSONProtocol.PermissionJsonFormat.read(p))
+              val perms = _perms.map(p =>
+                permissions.Permission.PermissionJSONProtocol.PermissionJsonFormat.read(p))
               new User(id.toIntExact, name, perms.toSet)
             case _ => deserializationError("User expected")
           }

@@ -50,13 +50,13 @@ object TrackedEvent {
       NamedDB(config.db.poolName).autoCommit {
         implicit session =>
           sql"""
-          INSERT INTO tracking.page_views VALUES (
-            ${event.clientID.clientID},
-            ${event.sessionID.sessionID},
-            ${event.timestamp},
-            ${event.page.toString},
-            ${event.referrer.map(_.toString)}
-          )
+            INSERT INTO tracking.page_views VALUES (
+              ${event.clientID.clientID},
+              ${event.sessionID.sessionID},
+              ${event.timestamp},
+              ${event.page.toString},
+              ${event.referrer.map(_.toString)}
+            )
           """.execute()()
       }
     }
@@ -67,13 +67,13 @@ object TrackedEvent {
       NamedDB(config.db.poolName).autoCommit {
         implicit session =>
           sql"""
-          INSERT INTO tracking.page_actions VALUES (
-            ${event.clientID.clientID},
-            ${event.sessionID.sessionID},
-            ${event.timestamp},
-            ${event.page.toString},
-            ${event.actionSpec.label},
-            ${event.actionSpec.section}
+            INSERT INTO tracking.page_actions VALUES (
+              ${event.clientID.clientID},
+              ${event.sessionID.sessionID},
+              ${event.timestamp},
+              ${event.page.toString},
+              ${event.actionSpec.label},
+              ${event.actionSpec.section}
           )""".execute()()
       }
     }

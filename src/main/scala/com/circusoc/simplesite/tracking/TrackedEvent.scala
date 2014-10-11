@@ -6,6 +6,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import com.circusoc.simplesite.WithConfig
 import scalikejdbc._
 import ExecutionContext.Implicits.global
+import spray.json._
+import scalikejdbc.NamedDB
 
 /**
  * We may track a specific set of things:
@@ -78,4 +80,45 @@ object TrackedEvent {
       }
     }
   }
+}
+
+case class PageViewClientEvent(
+                                clientID: String,
+                                sessionID: String,
+                                dt: Long,
+                                page: String,
+                                referrer: Option[String]
+                                ) {
+  def pageView = {
+    PageView(
+      ClientID(clientID),
+      SessionID(sessionID),
+      new time.DateTime().minus(dt),
+      new URL(page),
+      referrer.map(s => new URL(s)))
+  }
+}
+case class PageActionClientEvent(
+                                  clientID: String,
+                                  sessionID: String,
+                                  dt: Long,
+                                  page: String,
+                                  label: String,
+                                  section: Option[String]
+                                  ) {
+  def pageAction = {
+    PageAction(
+      ClientID(clientID),
+      SessionID(sessionID),
+      new time.DateTime().minus(dt),
+      new URL(page),
+      ActionSpec(label, section))
+  }
+}
+
+object PageViewJsonReaders extends DefaultJsonProtocol {
+  implicit val pageViewReader: RootJsonReader[PageViewClientEvent] = jsonFormat5(PageViewClientEvent)
+  implicit val pageViewWriter: RootJsonWriter[PageViewClientEvent] = jsonFormat5(PageViewClientEvent)
+  implicit val pageActionReader: RootJsonReader[PageActionClientEvent] = jsonFormat6(PageActionClientEvent)
+  implicit val pageActionWriter: RootJsonWriter[PageActionClientEvent] = jsonFormat6(PageActionClientEvent)
 }

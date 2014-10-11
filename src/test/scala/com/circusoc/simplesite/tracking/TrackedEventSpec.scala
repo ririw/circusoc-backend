@@ -15,6 +15,9 @@ import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
 import org.joda.time
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import org.scalatest.Matchers._
+import spray.json._
+import scala.Some
 
 /**
  *
@@ -97,7 +100,9 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
       ActionSpec("HireNow", Some("UserCard"))
     )
     val f1 = TrackedEvent.trackEvent(event)
-    val f2 = TrackedEvent.trackEvent(event.copy(actionSpec=ActionSpec("HireNow", None)))
+    val f2 = TrackedEvent.trackEvent(event.copy(
+      sessionID=SessionID("bbb"),
+      actionSpec=ActionSpec("HireNow", None)))
     Await.ready(f1, Duration.Inf)
     Await.ready(f2, Duration.Inf)
     val record = getConnection.createQueryTable(
@@ -107,5 +112,114 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
     val expected = testDataSet.getTable("action")
     Assertion.assertEquals(expected, record)
   }
+
+  "the PageViewClientEvent" should "correctly adjust timestamps" in {
+    // Create an event in the past. 1 day ago, and a 5 second offset
+    // then check it today, and see what's up. We should see it comming
+    // from 5 seconds ago, or so
+    val now = new time.DateTime()
+    val event = PageViewClientEvent(
+      "asd",
+      "qwe",
+      -5000,
+      "http://www.google.com/home",
+      None
+    )
+    val derivedEvent = event.pageView
+    derivedEvent.clientID should be(ClientID("asd"))
+    derivedEvent.sessionID should be(SessionID("qwe"))
+    derivedEvent.page should be(new URL("http://www.google.com/home"))
+    derivedEvent.referrer should be(None)
+    new time.Duration(derivedEvent.timestamp, now).getMillis should be > -5500l
+    new time.Duration(derivedEvent.timestamp, now).getMillis should be < -4500l
+  }
+  it should "deserialize correctly" in {
+    import PageViewJsonReaders._
+
+    val json =
+      """{
+        |  "clientID": "asd",
+        |  "sessionID": "qwe",
+        |  "dt": -5000,
+        |  "page": "http://www.google.com/home"
+        |}""".stripMargin
+
+    val event = PageViewClientEvent(
+      "asd",
+      "qwe",
+      -5000,
+      "http://www.google.com/home",
+      None
+    )
+    json.parseJson.convertTo[PageViewClientEvent] should be(event)
+    event.toJson.prettyPrint should be(json)
+
+    val json2 =
+      """{
+        |  "clientID": "asd",
+        |  "sessionID": "qwe",
+        |  "dt": -5000,
+        |  "page": "http://www.google.com/home",
+        |  "referrer": "http://www.bing.com"
+        |}""".stripMargin
+    val event2 = PageViewClientEvent(
+      "asd", "qwe", -5000, "http://www.google.com/home", Some("http://www.bing.com")
+    )
+    json2.parseJson.convertTo[PageViewClientEvent] should be(event2)
+    event2.toJson.prettyPrint should be(json2)
+}
+
+
+  "the PageViewActionEvent" should "correctly adjust timestamps" in {
+    val now = new time.DateTime()
+    val event = PageActionClientEvent(
+      "asd",
+      "qwe",
+      -5000,
+      "http://www.google.com/home",
+      "click",
+      Some("test")
+    )
+    val derivedEvent = event.pageAction
+    derivedEvent.clientID should be(ClientID("asd"))
+    derivedEvent.sessionID should be(SessionID("qwe"))
+    derivedEvent.page should be(new URL("http://www.google.com/home"))
+    derivedEvent.actionSpec should be(ActionSpec("click", Some("test")))
+    new time.Duration(derivedEvent.timestamp, now).getMillis should be > -5500l
+    new time.Duration(derivedEvent.timestamp, now).getMillis should be < -4500l
+  }
+
+  it should "deserialize correctly" in {
+    import PageViewJsonReaders._
+    val json =
+      """{
+        |  "clientID": "asd",
+        |  "sessionID": "qwe",
+        |  "dt": -5000,
+        |  "page": "http://www.google.com/home",
+        |  "label": "click",
+        |  "section": "test"
+        |}""".stripMargin
+    val event = PageActionClientEvent(
+      "asd", "qwe", -5000, "http://www.google.com/home", "click", Some("test")
+    )
+    json.parseJson.convertTo[PageActionClientEvent] should be(event)
+    event.toJson.prettyPrint should be(json)
+
+    val json2 =
+      """{
+        |  "clientID": "asd",
+        |  "sessionID": "qwe",
+        |  "dt": -5000,
+        |  "page": "http://www.google.com/home",
+        |  "label": "click"
+        |}""".stripMargin
+    val event2 = PageActionClientEvent(
+      "asd", "qwe", -5000, "http://www.google.com/home", "click", None
+    )
+    json2.parseJson.convertTo[PageActionClientEvent] should be(event2)
+    event2.toJson.prettyPrint should be(json2)
+  }
+
 }
 

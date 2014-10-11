@@ -11,32 +11,64 @@ object DBSetup {
   def setup()(implicit config: WithConfig ) {
     NamedDB(config.db.poolName) autoCommit {implicit ses =>
       logger.warn("Creating database schema.")
-      sql"CREATE TABLE user (id INTEGER PRIMARY KEY, username VARCHAR(100) NOT NULL, password VARCHAR(100) NOT NULL);".execute()()
-      sql"CREATE TABLE permission (user_id INTEGER NOT NULL, permission VARCHAR(100) NOT NULL);".execute()()
-      sql"""CREATE TABLE hirerequest (id INTEGER PRIMARY KEY AUTO_INCREMENT,
-                                      email VARCHAR(100) NOT  NULL,
-                                      location VARCHAR(100))""".execute()()
-      sql"""CREATE TABLE hirerequest_skill (hirerequest_id INTEGER NOT NULL, skill VARCHAR(100))""".execute()()
+      sql"""CREATE TABLE user (
+        id INTEGER PRIMARY KEY, 
+        username VARCHAR(1024) NOT NULL,
+        password VARCHAR(1024) NOT NULL);
+      """.execute()()
+      sql"""CREATE TABLE permission (
+        user_id INTEGER NOT NULL, 
+        permission VARCHAR(1024) NOT NULL);
+      """.execute()()
+      sql"""CREATE TABLE hirerequest (
+        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        email VARCHAR(1024) NOT  NULL,
+        location VARCHAR(1024));
+      """.execute()()
+      sql"""CREATE TABLE hirerequest_skill (
+        hirerequest_id INTEGER NOT NULL,
+        skill VARCHAR(1024))
+      """.execute()()
       sql"""CREATE TABLE performer (
         id INTEGER PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
+        name VARCHAR(1024) NOT NULL,
         profile_picture_id INTEGER NOT NULL,
-        shown BOOLEAN
-      )""".execute()()
+        shown BOOLEAN NOT NULL)
+      """.execute()()
       sql"""CREATE TABLE performer_skill (
         performer_id INTEGER NOT NULL,
-        skill VARCHAR(100) NOT NULL
-      )""".execute()()
+        skill VARCHAR(1024) NOT NULL)
+      """.execute()()
       sql"""CREATE TABLE performer_picture (
         performer_id INTEGER NOT NULL,
-        picture_id INTEGER NOT NULL
+        picture_id INTEGER NOT NULL)
+      """.execute()()
+      sql"""CREATE TABLE picture (
+        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        mediatype VARCHAR(1024),
+        picture BLOB)
+      """.execute()()
+      sql"""CREATE TABLE token (
+        userid INTEGER,
+        token VARCHAR(1024),
+        created TIMESTAMP DEFAULT current_timestamp)
+      """.execute()()
+      sql"""CREATE SCHEMA tracking""".execute()()
+      sql"""CREATE TABLE tracking.page_views(
+        clientid VARCHAR(1024) NOT NULL,
+        sessionid VARCHAR(1024) NOT NULL,
+        viewtime TIMESTAMP NOT NULL,
+        page VARCHAR(1024) NOT NULL,
+        referrer VARCHAR(1024)
       )""".execute()()
-      sql"""CREATE TABLE picture (id INTEGER PRIMARY KEY AUTO_INCREMENT,
-                                  mediatype VARCHAR(100),
-                                  picture BLOB)""".execute()()
-      sql"""CREATE TABLE token (userid INTEGER,
-                                token VARCHAR(100),
-                                created TIMESTAMP DEFAULT current_timestamp)""".execute()()
+      sql"""CREATE TABLE tracking.page_actions(
+        clientid VARCHAR(1024) NOT NULL,
+        sessionid VARCHAR(1024) NOT NULL,
+        viewtime TIMESTAMP NOT NULL,
+        page VARCHAR(1024) NOT NULL,
+        label VARCHAR(1024) NOT NULL,
+        section VARCHAR(1024)
+      )""".execute()()
     }
   }
 }

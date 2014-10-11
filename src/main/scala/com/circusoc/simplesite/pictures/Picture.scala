@@ -19,7 +19,7 @@ case class Picture(id: Long) {
   def get()(implicit config: WithConfig): Option[PictureResult] = Picture.getPicture(this)
 }
 
-object Picture extends  {
+object Picture {
   def fromURL(url: URL)(implicit config: WithConfig): Picture = {
     assert(url.getHost == config.paths.baseUrl.getHost)
     assert(url.getPort == config.paths.baseUrl.getPort)
@@ -38,7 +38,7 @@ object Picture extends  {
           val stream = r.blob(1).getBinaryStream
           val data = Stream.continually(stream.read).takeWhile(_ != -1).toArray.map(_.toByte)
           val mediaType = PictureResult.getMediaType(r.string(2)).get
-        PictureResult(data, mediaType)
+          PictureResult(data, mediaType)
         }.headOption().apply()
     }
   }

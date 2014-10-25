@@ -83,12 +83,12 @@ object TrackedEvent {
 }
 
 case class PageViewClientEvent(
-                                clientID: String,
-                                sessionID: String,
-                                dt: Long,
-                                page: String,
-                                referrer: Option[String]
-                                ) {
+  clientID: String,
+  sessionID: String,
+  dt: Long,
+  page: String,
+  referrer: Option[String]
+) {
   def pageView = {
     PageView(
       ClientID(clientID),
@@ -99,13 +99,13 @@ case class PageViewClientEvent(
   }
 }
 case class PageActionClientEvent(
-                                  clientID: String,
-                                  sessionID: String,
-                                  dt: Long,
-                                  page: String,
-                                  label: String,
-                                  section: Option[String]
-                                  ) {
+  clientID: String,
+  sessionID: String,
+  dt: Long,
+  page: String,
+  label: String,
+  section: Option[String]
+) {
   def pageAction = {
     PageAction(
       ClientID(clientID),

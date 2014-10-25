@@ -6,14 +6,15 @@ import org.codemonkey.simplejavamail.{Mailer, Email}
 import com.circusoc.simplesite.hire.HireService
 import com.circusoc.simplesite.pictures.PictureService
 import com.circusoc.simplesite.auth.AuthService
-import spray.routing.directives.CachingDirectives
+import com.circusoc.simplesite.tracking.TrackingEventService
 
 object Main extends App
             with SimpleRoutingApp
             with Core
             with AuthService
             with HireService
-            with PictureService {
+            with PictureService
+            with TrackingEventService {
   implicit val system = ActorSystem("my-system")
   config.db.setup()
   startServer(interface = "localhost", port = 8080) {
@@ -27,6 +28,7 @@ object Main extends App
     authroutes ~
     hireRoutes ~
     pictureRoutes ~
+    trackingRoutes ~
     path("setup") {
       get {
         complete {

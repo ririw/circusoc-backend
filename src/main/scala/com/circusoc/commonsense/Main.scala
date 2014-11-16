@@ -4,6 +4,8 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.{ConsoleReporter, MetricRegistry, ScheduledReporter}
+import org.apache.spark.mllib.linalg.{Matrix, SingularValueDecomposition}
+import org.apache.spark.rdd.RDD
 import spray.json._
 
 import scala.collection.mutable
@@ -11,7 +13,7 @@ import scala.collection.mutable
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.SparkConf
-import org.apache.spark.mllib.linalg.distributed.{CoordinateMatrix, MatrixEntry}
+import org.apache.spark.mllib.linalg.distributed.{RowMatrix, CoordinateMatrix, MatrixEntry}
 
 object Main extends App{
   val m = new Main()(MainConfig)
@@ -22,10 +24,12 @@ class Main(implicit config: CommonsenseConfig) {
   import com.circusoc.commonsense.EdgeJsonProtocol.EdgeJsonSupport
   implicit val jsonReader = EdgeJsonSupport
   lazy val infinifiles: Stream[File] = config.fileLocations.append(infinifiles)
-  def inputStreams = infinifiles.take(50).map(scala.io.Source.fromFile)
+  def inputStreams = infinifiles.take(1).map(scala.io.Source.fromFile)
   def linesStream = inputStreams.flatMap(_.getLines())
   def relationsStream = linesStream.map(_.parseJson.convertTo[Edge])
   config.reporter.start(1, TimeUnit.SECONDS)
+  val conf = new SparkConf().setAppName("Simple Application").setMaster("local[*]")
+  val sc = new SparkContext(conf)
 
   val lhsSet = new mutable.HashSet[LHS]()
   val rhsSet = new mutable.HashSet[RHS]()
@@ -44,15 +48,19 @@ class Main(implicit config: CommonsenseConfig) {
   val rowIndex: Map[LHS, Int] = lhsSet.toList.zipWithIndex.toMap
   val colIndex: Map[RHS, Int] = rhsSet.toList.zipWithIndex.toMap
 
-  relationsStream.map{relation =>
+  val entries: Stream[MatrixEntry] = relationsStream.flatMap{relation =>
     val lhs = LHS.fromEdge(relation)
     val rhs = RHS.fromEdge(relation)
     if (lhs.isDefined) {
       val row = rowIndex(lhs.get)
       val col = colIndex(rhs.get)
-      MatrixEntry(row, col, 1.0)
-    }
+      Some(MatrixEntry(row, col, 1.0))
+    } else None
   }
+  val entriesRDD: RDD[MatrixEntry] = sc.parallelize(entries)
+  val mat = new CoordinateMatrix(entriesRDD).toIndexedRowMatrix()
+  val svd = mat.computeSVD(20, computeU = true)
+  println(svd)
 }
 
 

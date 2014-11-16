@@ -14,11 +14,10 @@ trait WithConfig {
 }
 
 trait DB {
-
   def poolName: Symbol = 'production
   def setup() {
     Class.forName("org.h2.Driver")
-    ConnectionPool.add('production, "jdbc:h2:~/tmp/test", "sa", "")
+    ConnectionPool.add(poolName, "jdbc:h2:~/tmp/test", "sa", "")
     // ConnectionPool.add('production, "jdbc:h2:mem:production;DB_CLOSE_DELAY=-1", "sa", "")
   }
 }

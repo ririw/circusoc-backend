@@ -66,7 +66,7 @@ object Auth {
   def getToken(user: AuthenticatedUser)(implicit config: WithConfig): AuthToken = {
     NamedDB(config.db.poolName).autoCommit { implicit session =>
       val token = UUID.randomUUID().toString
-      sql"""INSERT INTO token (userid, token) VALUES (${user.id}, $token)""".execute()()
+      sql"""INSERT INTO token (user_id, token) VALUES (${user.id}, $token)""".execute()()
       AuthToken(token)
     }
   }
@@ -79,7 +79,7 @@ object Auth {
   def checkToken(token: String)(implicit config: WithConfig): Option[AuthenticatedUser] = {
     NamedDB(config.db.poolName).readOnly {
       implicit session =>
-        val check = sql"""SELECT userid FROM token WHERE token=$token""".map(_.int(1)).headOption()()
+        val check = sql"""SELECT user_id FROM token WHERE token=$token""".map(_.int(1)).headOption()()
         for {
           id <- check
           user <- User.getUserByID(id)

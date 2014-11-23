@@ -20,6 +20,10 @@ case class CanEditTagsPermission() extends Permission {
   val name = "CanEditTagsPermission"
 }
 
+case class CanUpdateMembers() extends Permission {
+  val name = "CanUpdateMembers"
+}
+
 case class ModifyImagesPermission() extends Permission {
   val name = "ModifyImagesPermission"
 }
@@ -29,6 +33,7 @@ object Permission {
     case "ChangePasswordPermission" => ChangePasswordPermission()
     case "CanChangePermissionsPermission" => CanChangePermissionsPermission()
     case "ModifyImagesPermission" => ModifyImagesPermission()
+    case "CanUpdateMembers" => CanUpdateMembers()
     case "CanEditTagsPermission" => CanEditTagsPermission()
     case _ => throw new PermissionConstructionException(s"Invalid permission: $name")
   }}

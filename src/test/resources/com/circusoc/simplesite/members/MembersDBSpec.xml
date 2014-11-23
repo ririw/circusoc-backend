@@ -1,0 +1,47 @@
+<dataset>
+    <member id="1"
+            name="steve"
+            email="steve123@example.com"
+            student_number="1234312"
+            is_arc="false"
+            subscribed="true"></member>
+    <member_waiver
+            member_id="1"
+            waiver_time="2015-01-01 00:00:00"
+            ></member_waiver>
+    <member_payment
+            member_id="1"
+            payment_time="2014-01-01 00:00:00"
+            ></member_payment>
+
+    <member id="2"
+            name="bob"
+            email="bob444@example.com"
+            is_arc="false"
+            subscribed="true"></member>
+    <member_waiver
+            member_id="2"
+            waiver_time="2015-01-01 00:00:00"
+            ></member_waiver>
+    <member_payment
+            member_id="2"
+            payment_time="2014-01-01 00:00:00"
+            ></member_payment>
+
+
+    <member id="3"
+            name="charlie"
+            email="333222111@fake.com"
+            student_number="333222111"
+            is_arc="false"
+            subscribed="false"></member>
+    <member_waiver
+            member_id="3"
+            waiver_time="2013-01-01 00:00:00"
+            ></member_waiver>
+    <member_payment
+            member_id="3"
+            payment_time="2014-01-01 00:00:00"
+            ></member_payment>
+</dataset>
+

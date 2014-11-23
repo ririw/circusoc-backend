@@ -14,9 +14,6 @@ import scalikejdbc.ConnectionPool
 import org.codemonkey.simplejavamail.Email
 import com.circusoc.simplesite.pictures.{PictureJsonFormatter, Picture}
 
-/**
- *
- */
 class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with PropertyChecks {
   implicit val config = new WithConfig {
     override val db: DB = new DB {
@@ -109,7 +106,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
   }
 
   it should "not get other random performers" in {
-    forAll {id: Long =>
+    forAll {id: Int =>
       whenever(id > 5) {
         Performer.getPerformerByID(id) should be(None)
       }
@@ -120,7 +117,6 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     import spray.json._
     implicit val implperf = new PerformerJsonFormat()
     val steve = Performer.getPerformerByID(1).get.toJson
-
     val expected = JsObject(
       "id" -> JsNumber(1),
       "name" -> JsString("steve"),
@@ -129,7 +125,15 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       "other_pictures" -> JsArray(JsString("https://localhost:5050/picture/2")),
       "shown" -> JsBoolean(false)
     )
-    steve should be(expected)
+    steve.asJsObject.getFields("id")    should be(expected.getFields("id"))
+    steve.asJsObject.getFields("name")  should be(expected.getFields("name"))
+    steve.asJsObject.getFields("shown") should be(expected.getFields("shown"))
+    steve.asJsObject.getFields("skills").head.asInstanceOf[JsArray].elements.toSet should be(
+            expected.getFields("skills").head.asInstanceOf[JsArray].elements.toSet)
+    steve.asJsObject.getFields("other_pictures") should be(
+            expected.getFields("other_pictures"))
+    steve.asJsObject.getFields("profile_picture") should be(
+            expected.getFields("profile_picture"))
   }
   "the performer serialization code" should "serialize another performer" in {
     import spray.json._

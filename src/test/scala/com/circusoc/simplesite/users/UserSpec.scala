@@ -1,22 +1,19 @@
 package com.circusoc.simplesite.users
 
-import org.scalatest.{BeforeAndAfter, FlatSpecLike}
-import org.scalatest.Matchers._
-import org.dbunit.{PropertiesBasedJdbcDatabaseTester, DBTestCase}
+import java.sql.{Connection, DriverManager}
+
+import com.circusoc.simplesite._
+import com.circusoc.simplesite.users.User.UserBuilder
+import com.circusoc.simplesite.users.permissions._
+import org.codemonkey.simplejavamail.Email
+import org.dbunit.database.DatabaseConnection
 import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
-import com.circusoc.simplesite._
-import java.sql.{Connection, DriverManager}
-import org.dbunit.database.DatabaseConnection
 import org.dbunit.operation.DatabaseOperation
+import org.dbunit.{DBTestCase, PropertiesBasedJdbcDatabaseTester}
+import org.scalatest.Matchers._
+import org.scalatest.{BeforeAndAfter, FlatSpecLike}
 import scalikejdbc.ConnectionPool
-import com.circusoc.simplesite.users.permissions.Permission
-import com.circusoc.simplesite.users.permissions.ChangePasswordPermission
-import com.circusoc.simplesite.users.permissions.PermissionConstructionException
-import scala.Some
-import com.circusoc.simplesite.users.User.UserBuilder
-import com.circusoc.simplesite.users.permissions.CanChangePermissionsPermission
-import org.codemonkey.simplejavamail.Email
 
 class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
   System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.h2.jdbcDriver" )
@@ -190,35 +187,35 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     val user = User.getUserByID(2).get
     val changingUser = User.getUserByID(1).get
     val authedChanger = new AuthenticatedUser(changingUser.id, changingUser.username, changingUser.userPermissions)
-    val changedUser = user.addPermission(CanChangePermissionsPermission(), authedChanger)
-    assert(changedUser.hasPermission(CanChangePermissionsPermission()))
+    val changedUser = user.addPermission(CanEditTagsPermission(), authedChanger)
+    assert(changedUser.hasPermission(CanEditTagsPermission()))
     val retrievedUser = User.getUserByID(2).get
-    assert(retrievedUser.hasPermission(CanChangePermissionsPermission()))
+    assert(retrievedUser.hasPermission(CanEditTagsPermission()))
 
-    changedUser.removePermission(CanChangePermissionsPermission(), authedChanger)
+    changedUser.removePermission(CanEditTagsPermission(), authedChanger)
     val nopermuser = User.getUserByID(2).get
 
-    assert(!nopermuser.hasPermission(CanChangePermissionsPermission()))
+    assert(!nopermuser.hasPermission(CanEditTagsPermission()))
   }
   it should "ignore non-existent permissions" in {
     val user = User.getUserByID(2).get
     val changingUser = User.getUserByID(1).get
     val authedChanger = new AuthenticatedUser(changingUser.id, changingUser.username, changingUser.userPermissions)
-    val changedUser = user.addPermission(CanChangePermissionsPermission(), authedChanger)
-    assert(changedUser.hasPermission(CanChangePermissionsPermission()))
+    val changedUser = user.addPermission(CanEditTagsPermission(), authedChanger)
+    assert(changedUser.hasPermission(CanEditTagsPermission()))
     val retrievedUser = User.getUserByID(2).get
-    assert(retrievedUser.hasPermission(CanChangePermissionsPermission()))
+    assert(retrievedUser.hasPermission(CanEditTagsPermission()))
 
-    changedUser.removePermission(ChangePasswordPermission(), authedChanger)
-    changedUser.removePermission(ChangePasswordPermission(), authedChanger)
+    changedUser.removePermission(CanEditTagsPermission(), authedChanger)
+    changedUser.removePermission(CanEditTagsPermission(), authedChanger)
 
     val nopermuser = User.getUserByID(2).get
-    assert(!nopermuser.hasPermission(ChangePasswordPermission()))
+    assert(!nopermuser.hasPermission(CanEditTagsPermission()))
   }
 
   "the user serialization code" should "serialize" in {
+    import com.circusoc.simplesite.users.User.UserJSONProtocol._
     import spray.json._
-    import User.UserJSONProtocol._
     val user = User.getUserByID(1).get
     val expected = JsObject(
       "id" -> JsNumber(1),
@@ -228,22 +225,22 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     user.toJson should be(expected)
   }
   it should "unserialize" in {
+    import com.circusoc.simplesite.users.User.UserJSONProtocol._
     import spray.json._
-    import User.UserJSONProtocol._
     val jsUser = "{\"id\":3,\"username\":\"madeup\",\"permissions\":[\"CanChangePermissionsPermission\"]}"
     jsUser.parseJson.convertTo[User] should be(new User(3, "madeup", Set(CanChangePermissionsPermission())))
   }
   it should "break with made up permissions" in {
+    import com.circusoc.simplesite.users.User.UserJSONProtocol._
     import spray.json._
-    import User.UserJSONProtocol._
     val jsUser = "{\"id\":3,\"username\":\"madeup\",\"permissions\":[\"CanJigglePermission\"]}"
     intercept[PermissionConstructionException] {
       jsUser.parseJson.convertTo[User]
     }
   }
   it should "break with not users" in {
+    import com.circusoc.simplesite.users.User.UserJSONProtocol._
     import spray.json._
-    import User.UserJSONProtocol._
     val jsUser = "{\"username\":\"madeup\",\"permissions\":[\"CanChangePermissionsPermission\"]}"
     intercept[spray.json.DeserializationException] {
       jsUser.parseJson.convertTo[User]

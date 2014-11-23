@@ -4,6 +4,6 @@
     <permission user_id="1" permission="CanChangePermissionsPermission" />
     <permission user_id="1" permission="ChangePasswordPermission" />
 
-    <token userid="1" token="helloworld"></token>
+    <token user_id="1" token="helloworld"></token>
 </dataset>
 

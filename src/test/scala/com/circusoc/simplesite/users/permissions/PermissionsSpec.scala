@@ -2,16 +2,17 @@ package com.circusoc.simplesite.users.permissions
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers._
-import spray.json._
 import org.scalatest.prop.PropertyChecks
 import com.circusoc.simplesite.users.permissions.Permission.PermissionJSONProtocol._
-
+import spray.json._
 
 class PermissionsSpec extends FlatSpec with PropertyChecks {
   it should "Correctly find permissions" in {
     Permission.apply("ChangePasswordPermission") should be(ChangePasswordPermission())
     Permission.apply("CanChangePermissionsPermission") should be(CanChangePermissionsPermission())
     Permission.apply("ModifyImagesPermission") should be(ModifyImagesPermission())
+    Permission.apply("CanUpdateMembers") should be(CanUpdateMembers())
+    Permission.apply("CanEditTagsPermission") should be(CanEditTagsPermission())
   }
 
   it should "Reject crazy permissions" in {
@@ -25,7 +26,9 @@ class PermissionsSpec extends FlatSpec with PropertyChecks {
       "object" -> "str",
       ChangePasswordPermission() -> "ChangePasswordPermission",
       CanChangePermissionsPermission() -> "CanChangePermissionsPermission",
-      ModifyImagesPermission() -> "ModifyImagesPermission"
+      ModifyImagesPermission() -> "ModifyImagesPermission",
+      CanUpdateMembers() -> "CanUpdateMembers",
+      CanEditTagsPermission() -> "CanEditTagsPermission"
     )
 
     forAll(validCombos) {

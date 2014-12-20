@@ -8,7 +8,7 @@ object DBSetup {
   val logger = LoggerFactory.getLogger(DBSetup.getClass.getName)
 
   def setup()(implicit config: WithConfig ) {
-    NamedDB(config.db.poolName) autoCommit {implicit ses =>
+    config.db.getDB() autoCommit {implicit ses =>
       logger.warn("Creating database schema.")
       sql"""CREATE TABLE user (
         id INTEGER PRIMARY KEY AUTO_INCREMENT,
@@ -54,6 +54,12 @@ object DBSetup {
         mediatype VARCHAR(1024),
         picture BLOB)
       """.execute()()
+      sql"""CREATE TABLE default_performer_picture (
+        picture_id INTEGER NOT NULL,
+        singleton BOOLEAN NOT NULL DEFAULT TRUE,
+        UNIQUE (singleton),
+        CHECK(singleton=TRUE)
+      )""".execute()()
       sql"""CREATE TABLE performer_picture (
         performer_id INTEGER NOT NULL,
         picture_id INTEGER NOT NULL,

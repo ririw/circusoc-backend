@@ -2,11 +2,10 @@ package com.circusoc.taglink
 
 import java.sql.{Connection, DriverManager}
 
-import akka.actor.{ActorSystem, ActorRefFactory}
+import akka.actor.{ActorRefFactory, ActorSystem}
 import com.circusoc.simplesite._
 import com.circusoc.simplesite.auth.AuthService
 import com.circusoc.testgraph.testgraph._
-import com.circusoc.taglink._
 import org.codemonkey.simplejavamail.{Email, Mailer}
 import org.dbunit.DBTestCase
 import org.dbunit.database.DatabaseConnection
@@ -120,6 +119,33 @@ class TagLinkSpec extends DBTestCase with FlatSpecLike {
       val testTag = testLocTag.tag
       val testContent = node.to.node
       assert(testtools.server.getItem(testLoc.name.name, testTag.name.name).exists(_ == testContent.content))
+    }
+  }
+  it should "correctly delete items" in {
+    val contentFactory = new TaglinkContentFactory()
+    val locationFactory = new TaglinkLocationFactory()
+    val tagFactory = new TaglinkTagFactory()
+    val content = (0 to 20).map {_ => contentFactory.randomNode()}.toList
+    val locations = (0 to 10).map {_ => locationFactory.randomNode()}.toList
+    val tags = (0 to 20).map {_ => tagFactory.randomNode()}.toList
+    val locationsAndTags = locations.join.randomSurjectionJoin(tags)
+    val locTagsandContent = locationsAndTags.join.bijectiveJoin(content)
+    for (node <- locTagsandContent) {
+      val testLocTag = node.from.node
+      val testLoc = testLocTag.location
+      val testTag = testLocTag.tag
+      val testContent = node.to.node
+      assert(testtools.server.getItem(testLoc.name.name, testTag.name.name).exists(_ == testContent.content))
+    }
+    for (loctag <- locationsAndTags) {
+      testtools.server.deleteItems(loctag.joinResult.location.name.name, loctag.joinResult.tag.name.name)
+    }
+    for (node <- locTagsandContent) {
+      val testLocTag = node.from.node
+      val testLoc = testLocTag.location
+      val testTag = testLocTag.tag
+      val testContent = node.to.node
+      assert(testtools.server.getItem(testLoc.name.name, testTag.name.name).isEmpty)
     }
   }
 }

@@ -16,6 +16,7 @@ resolvers ++= Seq(
 libraryDependencies ++= Seq(
   "com.typesafe.akka"    %% "akka-actor"       % "2.2.3",
   "com.typesafe.akka"    %% "akka-slf4j"       % "2.2.3",
+  "com.typesafe"          % "config"           % "1.2.1",
   "ch.qos.logback"        % "logback-classic"  % "1.0.13",
   "io.spray"              % "spray-can"        % "1.2-20130712",
   "io.spray"              % "spray-routing"    % "1.2-20130712",

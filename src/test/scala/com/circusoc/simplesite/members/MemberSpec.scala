@@ -51,14 +51,14 @@ class MemberSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with P
     getResourceAsStream("/com/circusoc/simplesite/members/MembersDBSpec.xml"))
 
   it should "get members by email" in {
-    val member = NamedDB(config.db.poolName).readOnly(implicit session => Member.getMember("steve123@example.com"))
+    val member = config.db.getDB().readOnly(implicit session => Member.getMember("steve123@example.com"))
     assert(member.isDefined)
     member.get.name should be("steve")
     member.get.lastPayment should be (new DateTime(2014, 1, 1, 0, 0, 0))
     member.get.lastWaiver should be (new DateTime(2015, 1, 1, 0, 0, 0))
   }
   it should "get members by id" in {
-    val member = NamedDB(config.db.poolName).readOnly(implicit session => Member.getMember(1))
+    val member = config.db.getDB().readOnly(implicit session => Member.getMember(1))
     assert(member.isDefined)
     member.get.name should be("steve")
     member.get.lastPayment should be (new DateTime(2014, 1, 1, 0, 0, 0))
@@ -66,7 +66,7 @@ class MemberSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with P
   }
 
   it should "get members by name search" in {
-    val members = NamedDB(config.db.poolName).readOnly(implicit session => Member.searchMembers("eve"))
+    val members = config.db.getDB().readOnly(implicit session => Member.searchMembers("eve"))
     assert(members.length == 1)
     val member = members.head
     member.name should be("steve")
@@ -75,7 +75,7 @@ class MemberSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with P
   }
 
   it should "get members by email search" in {
-    val members = NamedDB(config.db.poolName).readOnly(implicit session => Member.searchMembers("example.com"))
+    val members = config.db.getDB().readOnly(implicit session => Member.searchMembers("example.com"))
     assert(members.length == 2)
     val names = members.map(_.name).sorted
     val emails = members.map(_.email).sorted
@@ -83,53 +83,53 @@ class MemberSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with P
     emails should be(List(Some("bob444@example.com"), Some("steve123@example.com")))
   }
   it should "get members by student number search" in {
-    val members = NamedDB(config.db.poolName).readOnly(implicit session => Member.searchMembers("333222111"))
+    val members = config.db.getDB().readOnly(implicit session => Member.searchMembers("333222111"))
     assert(members.length == 1)
     members.head.id should be(3)
   }
 
   it should "update payment and waivers" in {
-    val member = NamedDB(config.db.poolName).readOnly(implicit session => Member.getMember(3)).head
-    val updatedMember = NamedDB(config.db.poolName).autoCommit { implicit session =>
+    val member = config.db.getDB().readOnly(implicit session => Member.getMember(3)).head
+    val updatedMember = config.db.getDB().autoCommit { implicit session =>
       Member.recordPaymentAndWaiver(member, TestUpdatePermission())
     }
-    val newMember = NamedDB(config.db.poolName).readOnly(implicit session => Member.getMember(3)).head
+    val newMember = config.db.getDB().readOnly(implicit session => Member.getMember(3)).head
     newMember should be(updatedMember)
   }
 
   it should "get the list of subscribed users" in {
-    val members = NamedDB(config.db.poolName).readOnly(implicit session => Member.getSubscribedEmails())
+    val members = config.db.getDB().readOnly(implicit session => Member.getSubscribedEmails())
     members.sorted should be(List("bob444@example.com", "steve123@example.com"))
   }
 
   it should "get all the members" in {
-    val members = NamedDB(config.db.poolName).readOnly(implicit session => Member.getAllMembers)
+    val members = config.db.getDB().readOnly(implicit session => Member.getAllMembers)
     members.map(_.id).sorted should be(List(1, 2, 3))
   }
   it should "add members" in {
-    val anne = NamedDB(config.db.poolName).localTx { implicit s =>
+    val anne = config.db.getDB().localTx { implicit s =>
       val anne1 = Member.newMember("Anne Alison", None, Some(StudentRecord("z325555", true)), false).left.get
       val anne2 = Member.searchMembers("anne").head
       anne1 should be(anne2)
       anne1
     }
-    val anne3 = NamedDB(config.db.poolName).readOnly(implicit s => Member.searchMembers("anne").head)
+    val anne3 = config.db.getDB().readOnly(implicit s => Member.searchMembers("anne").head)
     anne should be(anne3)
   }
   it should "be impossible to have two users with the same name" in {
-    val broken = NamedDB(config.db.poolName).localTx { implicit s =>
+    val broken = config.db.getDB().localTx { implicit s =>
       Member.newMember("steve", None, Some(StudentRecord("xxxxxx", true)), false)
     }
     broken should be(Right(DuplicateNameError))
   }
   it should "be impossible to have two users with the same email" in {
-    val broken = NamedDB(config.db.poolName).localTx { implicit s =>
+    val broken = config.db.getDB().localTx { implicit s =>
       Member.newMember("bobbert", Some("steve123@example.com"), Some(StudentRecord("xxxxxx", true)), false)
     }
     broken should be(Right(DuplicateEmailError))
   }
   it should "be impossible to have two users with the same student number" in {
-    val broken = NamedDB(config.db.poolName).localTx { implicit s =>
+    val broken = config.db.getDB().localTx { implicit s =>
       Member.newMember("bobbert", Some("cxedasda@derp.com"), Some(StudentRecord("333222111", true)), false)
     }
     broken should be(Right(DuplicateSNumError))

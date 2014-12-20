@@ -49,7 +49,7 @@ case class ClientID(clientID: String) extends AnyVal
 object TrackedEvent {
   def trackEvent(event: PageView)(implicit config: WithConfig): Future[Unit] = {
     Future {
-      NamedDB(config.db.poolName).autoCommit {
+      config.db.getDB().autoCommit {
         implicit session =>
           sql"""
             INSERT INTO tracking.page_views VALUES (
@@ -66,7 +66,7 @@ object TrackedEvent {
 
   def trackEvent(event: PageAction)(implicit config: WithConfig): Future[Unit] = {
     Future {
-      NamedDB(config.db.poolName).autoCommit {
+      config.db.getDB().autoCommit {
         implicit session =>
           sql"""
             INSERT INTO tracking.page_actions VALUES (

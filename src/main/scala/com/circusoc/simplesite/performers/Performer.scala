@@ -1,8 +1,6 @@
 package com.circusoc.simplesite.performers
 
 import spray.json._
-import java.net.URL
-import scalikejdbc.NamedDB
 import com.circusoc.simplesite.WithConfig
 import scalikejdbc._
 import org.slf4j.LoggerFactory
@@ -20,7 +18,53 @@ case class Performer(id: Long,
                      skills: Set[Skill],
                      profilePicture: Picture,
                      otherPictures: Set[Picture],
-                     shown: Boolean) {}
+                     shown: Boolean) {
+  def addSkill(skill: Skill, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
+    config.db.getDB().localTx {implicit session =>
+      sql"""INSERT INTO performer_skill VALUE ($id, ${skill.skill})""".execute()()
+      this.copy(skills=skills + skill)
+    }
+  }
+  def removeSkill(skill: Skill)(implicit config: WithConfig): Performer = {
+    config.db.getDB().autoCommit {implicit session =>
+      if (skills.contains(skill)) {
+        sql"""DELETE FROM performer_skill WHERE performer_id=$id and skill=${skill.skill}""".execute()()
+        this.copy(skills = skills - skill)
+      } else {
+        this
+      }
+    }
+  }
+
+  def addPicture(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
+    if (otherPictures.contains(picture)) {
+      config.db.getDB().autoCommit {implicit session =>
+        sql"""INSERT INTO performer_picture VALUES ($id, ${picture.id})""".execute()()
+        this.copy(otherPictures=otherPictures + picture)
+      }
+    } else {
+      this
+    }
+  }
+
+  def deletePicture(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
+    if (otherPictures.contains(picture)) {
+      config.db.getDB().autoCommit { implicit session =>
+        sql"""DELETE FROM performer_pictures WHERE performer_id=$id AND picture_id=${picture.id}""".execute()()
+        this.copy(otherPictures = otherPictures - picture)
+      }
+    } else {
+      this
+    }
+  }
+
+  def setProfilePic(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
+    config.db.getDB().autoCommit { implicit session =>
+      sql"""UPDATE performer SET profile_picture=${picture.id} WHERE id=$id""".execute()()
+    }
+    this.copy(profilePicture=picture)
+  }
+}
 
 object Performer {
   case class PerformerBuilder(
@@ -80,7 +124,7 @@ object Performer {
   }
   
   def getPerformerByID(id: Long)(implicit config: WithConfig): Option[Performer] = {
-    val performerDetails = NamedDB(config.db.poolName).readOnly{implicit session =>
+    val performerDetails = config.db.getDB().readOnly{implicit session =>
       val perfTableCollection = sql"""
         SELECT id, name, profile_picture_id, shown FROM performer
         WHERE id=$id
@@ -95,6 +139,28 @@ object Performer {
     }
     performerDetails.build()
   }
+
+  def newPerformer(name: String, shown: Boolean, mayUpdateUserProof: MayAlterPerformersProof)
+                  (implicit config: WithConfig): Performer = {
+    val picture = Picture.defaultPicture.id
+    val performerid = config.db.getDB().autoCommit {implicit session =>
+      sql"""INSERT INTO performer (name,  profile_picture_id, shown)
+                           VALUES ($name, $picture,          $shown)""".updateAndReturnGeneratedKey()()
+    }
+    getPerformerByID(performerid) match {
+      case None =>
+        // $COVERAGE-OFF$
+        throw new Exception("Invalid state, something strange happened")
+        // $COVERAGE-ON$
+      case Some(p) => p
+    }
+  }
+}
+
+sealed trait MayAlterPerformersProof
+case class IsUser(user: com.circusoc.simplesite.users.User) extends MayAlterPerformersProof
+case class DebugMayAlterPerformerProof(implicit config: WithConfig) extends MayAlterPerformersProof {
+  assert(!config.isProduction)
 }
 
 case class Skill(skill: String) extends AnyVal

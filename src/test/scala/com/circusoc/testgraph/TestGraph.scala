@@ -11,7 +11,7 @@ object testgraph {
 
 import testgraph._
 
-trait TestNodeFactory[NodeType] {
+trait TestNodeFactory[+NodeType] {
   def randomItem(): NodeType
   def randomNode(): TestNode[NodeType] = new TestNode(randomItem())
   def randomNode(marker: Symbol): TestNode[NodeType] = new TestNode(randomItem(), Some(marker))
@@ -28,7 +28,7 @@ trait NodeJoiner[FromType, ToType, ResultType] {
     new TestNodeJoin(from, to, _join(from.node, to.node))
 }
 
-class TestNode[NodeType](val node: NodeType, val marker: Option[Symbol] = None)
+class TestNode[+NodeType](val node: NodeType, val marker: Option[Symbol] = None)
 class TestNodeJoin[FromType, ToType, ResultType](val from: TestNode[FromType],
                                                  val to: TestNode[ToType],
                                                  val joinResult: ResultType) extends TestNode(joinResult)

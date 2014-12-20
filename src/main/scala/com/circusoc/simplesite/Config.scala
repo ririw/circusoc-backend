@@ -15,6 +15,7 @@ trait WithConfig {
 
 trait DB {
   def poolName: Symbol = 'production
+  def getDB() = NamedDB(poolName)
   def setup() {
     Class.forName("org.h2.Driver")
     ConnectionPool.add(poolName, "jdbc:h2:~/tmp/test", "sa", "")

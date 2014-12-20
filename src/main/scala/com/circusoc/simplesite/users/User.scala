@@ -7,9 +7,6 @@ import org.slf4j.LoggerFactory
 import scalikejdbc._
 import spray.json._
 
-// !!! IMPORTANT, else `convertTo` and `toJson` won't work correctly
-
-
 /**
  *  A user - this is for admin users of the circusoc site.
  *
@@ -92,7 +89,7 @@ object User {
   }
 
   def getUserByID(id: Long)(implicit config: WithConfig): Option[User] = {
-    val builder = NamedDB(config.db.poolName).readOnly{implicit session =>
+    val builder = config.db.getDB().readOnly{implicit session =>
       sql"""
         SELECT
           id, username, permission
@@ -105,7 +102,7 @@ object User {
   }
 
   def getUserByName(name: String)(implicit config: WithConfig): Option[User] = {
-    val builder = NamedDB(config.db.poolName).readOnly{implicit session =>
+    val builder = config.db.getDB().readOnly{implicit session =>
       sql"""
         SELECT
           id, username, permission
@@ -144,7 +141,7 @@ object User {
 
   def authenticateByUsername(name: String, pass: Password)
                             (implicit config: WithConfig): Option[AuthenticatedUser] = {
-    NamedDB(config.db.poolName).readOnly { implicit session =>
+    config.db.getDB().readOnly { implicit session =>
       val _hashedpw = sql"""
         SELECT password
         FROM
@@ -168,7 +165,7 @@ object User {
   }
   def changePassword(user: User, newpass: Password, mayChangeProof: MayChangePassProof)
                     (implicit config: WithConfig): User = {
-    NamedDB(config.db.poolName).autoCommit{implicit session =>
+    config.db.getDB().autoCommit{implicit session =>
       val password = BCrypt.hashpw(newpass.pass, BCrypt.gensalt())
       sql"UPDATE user SET password=$password WHERE id=${user.id}".executeUpdate().apply()
     }
@@ -194,7 +191,7 @@ object User {
   def addPermission(to: User,
                     permission: permissions.Permission,
                     mayAlterUsersProof: MayAlterUsersProof)(implicit config: WithConfig): User = {
-    NamedDB(config.db.poolName).autoCommit{implicit session =>
+    config.db.getDB().autoCommit{implicit session =>
       sql"INSERT INTO permission VALUES (${to.id}, ${permission.name})".execute().apply()
     }
     val user = getUserByID(to.id)
@@ -209,7 +206,7 @@ object User {
                        permission: permissions.Permission,
                        mayAlterUsersProof: MayAlterUsersProof)(implicit config: WithConfig): User = {
 
-    NamedDB(config.db.poolName).autoCommit{implicit session =>
+    config.db.getDB().autoCommit{implicit session =>
       sql"DELETE FROM permission WHERE user_id=${from.id} AND permission=${permission.name}".
         execute().apply()
     }
@@ -227,7 +224,7 @@ object User {
               mayAlterUsersProof: MayAlterUsersProof)(implicit config: WithConfig): User = {
     val salt = BCrypt.gensalt()
     val encryptedpwd = BCrypt.hashpw(password.pass, salt)
-    NamedDB(config.db.poolName).autoCommit {implicit sess =>
+    config.db.getDB().autoCommit {implicit sess =>
       val id = sql"""
              INSERT INTO user (username, password)
              VALUES ($username, $encryptedpwd)""".updateAndReturnGeneratedKey().apply()

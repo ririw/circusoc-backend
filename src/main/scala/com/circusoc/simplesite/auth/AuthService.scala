@@ -64,7 +64,7 @@ trait AuthService extends HttpService with SprayJsonSupport {
 
 object Auth {
   def getToken(user: AuthenticatedUser)(implicit config: WithConfig): AuthToken = {
-    NamedDB(config.db.poolName).autoCommit { implicit session =>
+    config.db.getDB().autoCommit { implicit session =>
       val token = UUID.randomUUID().toString
       sql"""INSERT INTO token (user_id, token) VALUES (${user.id}, $token)""".execute()()
       AuthToken(token)

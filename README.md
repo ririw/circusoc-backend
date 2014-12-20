@@ -34,7 +34,5 @@ user stories
 * as an admin, I should be able to make sure members are signed up
 * as an admin, I should be able to audit our users
 
-bug log
+Testing
 =======
-* 951fe1244710e5d31279b36593e159edb732aabc: T - I copy pasted some an SQL insert, and didn't change the table name. Caught by unit tests.
-

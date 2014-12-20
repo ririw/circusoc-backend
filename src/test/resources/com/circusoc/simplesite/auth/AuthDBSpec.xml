@@ -2,7 +2,7 @@
     <!-- testpass -->
     <user id="1" username="Admin" password="$2a$10$.Eyc09JBc3hhNromjOfmS.XsKosxtngNm9bf35gjcc.albzV8.1IC" />
     <permission user_id="1" permission="CanChangePermissionsPermission" />
-    <permission user_id="1" permission="ChangePasswordPermission" />
+    <permission user_id="1" permission="CanAdministerUsersPermission" />
 
     <token user_id="1" token="helloworld"></token>
 </dataset>

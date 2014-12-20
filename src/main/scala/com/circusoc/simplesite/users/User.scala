@@ -1,12 +1,11 @@
 package com.circusoc.simplesite.users
 
 import com.circusoc.simplesite.WithConfig
-import scalikejdbc._
-import org.mindrot.jbcrypt.BCrypt
-import spray.json._
-import scala.Some
 import com.circusoc.simplesite.users.permissions.Permission
+import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
+import scalikejdbc._
+import spray.json._
 
 // !!! IMPORTANT, else `convertTo` and `toJson` won't work correctly
 
@@ -21,11 +20,11 @@ class User(val id: Long, val username: String, val userPermissions: Set[permissi
   def hasPermission(permission: permissions.Permission): Boolean = userPermissions.contains(permission)
   def addPermission(permission: permissions.Permission,
                     changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
-    User.addPermission(this, permission, User.MayChangePermsProof.hasChangePermisProof(changingUser))
+    User.addPermission(this, permission, User.MayAlterUsersProof.hasChangePermisProof(changingUser))
   }
   def removePermission(permission: permissions.Permission,
                        changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
-    User.removePermission(this, permission, User.MayChangePermsProof.hasChangePermisProof(changingUser))
+    User.removePermission(this, permission, User.MayAlterUsersProof.hasChangePermisProof(changingUser))
   }
   def changePassword(newPassword: Password,
                      changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
@@ -179,7 +178,7 @@ object User {
   sealed trait MayChangePassProof
   object MayChangePassProof {
     def hasChangePerm(changingUser: AuthenticatedUser): MayChangePassProof = {
-      assert(changingUser.hasPermission(permissions.ChangePasswordPermission()))
+      assert(changingUser.hasPermission(permissions.CanAdministerUsersPermission()))
       new MayChangePassProof {}
     }
     def isChangingUser(changingUser: AuthenticatedUser, changedUser: User) = {
@@ -194,7 +193,7 @@ object User {
 
   def addPermission(to: User,
                     permission: permissions.Permission,
-                    mayChangePermsProof: MayChangePermsProof)(implicit config: WithConfig): User = {
+                    mayAlterUsersProof: MayAlterUsersProof)(implicit config: WithConfig): User = {
     NamedDB(config.db.poolName).autoCommit{implicit session =>
       sql"INSERT INTO permission VALUES (${to.id}, ${permission.name})".execute().apply()
     }
@@ -208,7 +207,7 @@ object User {
 
   def removePermission(from: User,
                        permission: permissions.Permission,
-                       mayChangePermsProof: MayChangePermsProof)(implicit config: WithConfig): User = {
+                       mayAlterUsersProof: MayAlterUsersProof)(implicit config: WithConfig): User = {
 
     NamedDB(config.db.poolName).autoCommit{implicit session =>
       sql"DELETE FROM permission WHERE user_id=${from.id} AND permission=${permission.name}".
@@ -222,16 +221,33 @@ object User {
     // $COVERAGE-ON$
     user.get
   }
-  
-  sealed trait MayChangePermsProof
-  object MayChangePermsProof {
-    def hasChangePermisProof(changingUser: AuthenticatedUser): MayChangePermsProof = {
-      assert(changingUser.hasPermission(permissions.CanChangePermissionsPermission()))
-      new MayChangePermsProof {}
+
+  def addUser(username: String,
+              password: Password,
+              mayAlterUsersProof: MayAlterUsersProof)(implicit config: WithConfig): User = {
+    val salt = BCrypt.gensalt()
+    val encryptedpwd = BCrypt.hashpw(password.pass, salt)
+    NamedDB(config.db.poolName).autoCommit {implicit sess =>
+      val id = sql"""
+             INSERT INTO user (username, password)
+             VALUES ($username, $encryptedpwd)""".updateAndReturnGeneratedKey().apply()
+      new User(id, username, Set())
     }
   }
 
-  import permissions.Permission.PermissionJSONProtocol._
+  sealed trait MayAlterUsersProof
+  object MayAlterUsersProof {
+    def hasChangePermisProof(changingUser: AuthenticatedUser): MayAlterUsersProof = {
+      assert(changingUser.hasPermission(permissions.CanChangePermissionsPermission()))
+      new MayAlterUsersProof {}
+    }
+  }
+
+  class DebugMayAlterUsersProof(implicit config: WithConfig) extends MayAlterUsersProof{
+    assert(!config.isProduction)
+  }
+
+  import com.circusoc.simplesite.users.permissions.Permission.PermissionJSONProtocol._
   object UserJSONProtocol extends DefaultJsonProtocol {
     implicit object UserJsonFormat extends RootJsonFormat[User] {
       def write(c: User) =

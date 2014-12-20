@@ -1,9 +1,9 @@
 package com.circusoc.simplesite
 
-import java.sql.{Connection, DriverManager}
-import scalikejdbc._
-import org.codemonkey.simplejavamail.Email
 import java.net.URL
+
+import org.codemonkey.simplejavamail.Email
+import scalikejdbc._
 
 trait WithConfig {
   val db: DB

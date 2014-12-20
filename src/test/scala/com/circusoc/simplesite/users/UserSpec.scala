@@ -70,7 +70,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
   "the user class" should "deal with permissions" in {
     val user = new User(1,"asd", Set(Permission.apply("CanChangePermissionsPermission")))
     assert(user.hasPermission(Permission.apply("CanChangePermissionsPermission")))
-    assert(!user.hasPermission(Permission.apply("ChangePasswordPermission")))
+    assert(!user.hasPermission(Permission.apply("CanAdministerUsersPermission")))
   }
 
   "the user builder" should "fill out right" in {
@@ -86,7 +86,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     assert(user.exists(_.username == "steve"))
     assert(user.exists(_.username == "steve"))
     assert(user.exists(_.hasPermission(Permission.apply("CanChangePermissionsPermission"))))
-    assert(user.exists(!_.hasPermission(Permission.apply("ChangePasswordPermission"))))
+    assert(user.exists(!_.hasPermission(Permission.apply("CanAdministerUsersPermission"))))
   }
 
   it should "error when you double up on id" in {
@@ -163,7 +163,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 
   it should "change other's passwords if the changing user has the change permission" in {
     val user = new UserBuilder().addId(1).addUsername("Admin").build().get
-    val changingUser = new UserBuilder().addId(1).addUsername("Setve").addPermission(ChangePasswordPermission()).build().get
+    val changingUser = new UserBuilder().addId(1).addUsername("Setve").addPermission(CanAdministerUsersPermission()).build().get
     val authedChanger = new AuthenticatedUser(changingUser.id, changingUser.username, changingUser.userPermissions)
     user.changePassword(Password("blerp"), authedChanger)
     val unfounduser = User.authenticateByUsername("Admin", Password("joe"))
@@ -213,6 +213,13 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     assert(!nopermuser.hasPermission(CanEditTagsPermission()))
   }
 
+  it should "insert new users" in {
+    val newUsername = "derpson"
+    val newPW = "jerpson"
+    val newUser = User.addUser(newUsername, Password(newPW), new User.DebugMayAlterUsersProof())
+    newUser.username should be(newUsername)
+  }
+
   "the user serialization code" should "serialize" in {
     import com.circusoc.simplesite.users.User.UserJSONProtocol._
     import spray.json._
@@ -255,7 +262,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     val user2 = new User(1, "steve", Set(Permission("CanChangePermissionsPermission")))
     val user3 = new User(2, "steve", Set(Permission("CanChangePermissionsPermission")))
     val user4 = new User(1, "bvo", Set(Permission("CanChangePermissionsPermission")))
-    val user5 = new User(1, "steve", Set(Permission("CanChangePermissionsPermission"), Permission("ChangePasswordPermission")))
+    val user5 = new User(1, "steve", Set(Permission("CanChangePermissionsPermission"), Permission("CanAdministerUsersPermission")))
     val autheduser = new AuthenticatedUser(1, "steve", Set(Permission("CanChangePermissionsPermission")))
     user1 should be(user2)
     user2 should be(user1)
@@ -274,7 +281,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     val user2 = new AuthenticatedUser(1, "steve", Set(Permission("CanChangePermissionsPermission")))
     val user3 = new AuthenticatedUser(2, "steve", Set(Permission("CanChangePermissionsPermission")))
     val user4 = new AuthenticatedUser(1, "bvo", Set(Permission("CanChangePermissionsPermission")))
-    val user5 = new AuthenticatedUser(1, "steve", Set(Permission("CanChangePermissionsPermission"), Permission("ChangePasswordPermission")))
+    val user5 = new AuthenticatedUser(1, "steve", Set(Permission("CanChangePermissionsPermission"), Permission("CanAdministerUsersPermission")))
     val nonauthedUser = new User(1, "steve", Set(Permission("CanChangePermissionsPermission")))
     user1 should be(user2)
     user2 should be(user1)
@@ -288,4 +295,20 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     user2.hashCode() should not be user3.hashCode()
     nonauthedUser should not be user1
   }
+
+  "the debug proof" should "not work in production" in {
+    val newConfig = new WithConfig {
+      override val hire: Hire = config.hire
+      override val paths: PathConfig = config.paths
+      override val db: DB = config.db
+      override val mailer: MailerLike = config.mailer
+      override val isProduction = true
+    }
+    val proof = new User.DebugMayAlterUsersProof()
+    intercept[AssertionError]{
+      new User.DebugMayAlterUsersProof()(newConfig)
+    }
+  }
+
+
 }

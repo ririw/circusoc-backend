@@ -8,8 +8,8 @@ sealed trait Permission {
   val asPermission = this.asInstanceOf[Permission]
 }
 
-case class ChangePasswordPermission() extends Permission {
-  val name = "ChangePasswordPermission"
+case class CanAdministerUsersPermission() extends Permission {
+  val name = "CanAdministerUsersPermission"
 }
 
 case class CanChangePermissionsPermission() extends Permission {
@@ -30,7 +30,7 @@ case class ModifyImagesPermission() extends Permission {
 
 object Permission {
   def apply(name: String): Permission = {name match {
-    case "ChangePasswordPermission" => ChangePasswordPermission()
+    case "CanAdministerUsersPermission" => CanAdministerUsersPermission()
     case "CanChangePermissionsPermission" => CanChangePermissionsPermission()
     case "ModifyImagesPermission" => ModifyImagesPermission()
     case "CanUpdateMembers" => CanUpdateMembers()

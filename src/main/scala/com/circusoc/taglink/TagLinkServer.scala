@@ -1,19 +1,16 @@
 package com.circusoc.taglink
 
-import akka.actor.ActorSystem
 import com.circusoc.simplesite.Main._
-import com.circusoc.simplesite.WithConfig
 import com.circusoc.simplesite.auth.AuthService
 import com.circusoc.simplesite.users.AuthenticatedUser
 import com.circusoc.simplesite.users.permissions.CanEditTagsPermission
 import org.slf4j.LoggerFactory
-import scalikejdbc.{NamedDB, ConnectionPool}
-import scalikejdbc._
-import spray.http.{HttpResponse, StatusCodes, MediaTypes}
+import scalikejdbc.{ConnectionPool, NamedDB, _}
+import spray.http.{HttpResponse, MediaTypes, StatusCodes}
 import spray.httpx.unmarshalling.BasicUnmarshallers
-import scala.concurrent.ExecutionContext.Implicits.global
 import spray.json._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait TagLinkServer {
   this: TagLinkConfig with AuthService =>
@@ -22,7 +19,7 @@ trait TagLinkServer {
       get {
         respondWithMediaType(MediaTypes.`application/json`)
         complete {
-          getItems(location, tag)
+          getItem(location, tag)
         }
       } ~
     authenticate(authenticateUser) { user: AuthenticatedUser =>
@@ -33,7 +30,7 @@ trait TagLinkServer {
                 try {
                   val json = bodyJson.parseJson
                   val compacted = json.compactPrint
-                  val updated = putItems(location, tag)
+                  val updated = putItem(location, tag, compacted)
                   if (updated) StatusCodes.Created
                   else StatusCodes.OK
                 } catch {
@@ -56,17 +53,17 @@ trait TagLinkServer {
     }
   }
 
-  def putItems(location: String, tag: String): Boolean = {
-    NamedDB(config.db.poolName).localTx { implicit session =>
+  def putItem(location: String, tag: String, item: String): Boolean = {
+    NamedDB(taglinkDB.poolName).localTx { implicit session =>
       val count = sql"""SELECT count(*) FROM tag WHERE location=$location AND tag=$tag""".map(_.int(1)).first()().get
       sql"""DELETE FROM tag WHERE location=$location AND tag=$tag""".execute()()
-      sql"""INSERT INTO tag VALUES ($location, $tag)""".execute()()
+      sql"""INSERT INTO tag VALUES ($location, $tag, $item)""".execute()()
       count > 0
     }
   }
 
-  def getItems(location: String, tag: String): Option[String] = {
-    NamedDB(config.db.poolName).readOnly { implicit session =>
+  def getItem(location: String, tag: String): Option[String] = {
+    NamedDB(taglinkDB.poolName).readOnly { implicit session =>
       val items = sql"""SELECT items FROM tag WHERE location=$location AND tag=$tag""".
         map(_.string(1)).headOption()()
       items
@@ -74,7 +71,7 @@ trait TagLinkServer {
   }
 
   def deleteItems(location: String, tag: String): Boolean = {
-    NamedDB(config.db.poolName).autoCommit { implicit session =>
+    NamedDB(taglinkDB.poolName).autoCommit { implicit session =>
       val count = sql"""SELECT count(*) FROM tag WHERE location=$location AND tag=$tag""".map(_.int(1)).first()().get
       sql"""DELETE FROM tag WHERE location=$location AND tag=$tag""".execute()()
       count > 0
@@ -82,7 +79,7 @@ trait TagLinkServer {
   }
 }
 trait TagLinkConfig {
-  val db = new DB{}
+  val taglinkDB = new DB{}
 }
 
 trait DB {
@@ -97,8 +94,8 @@ trait DB {
 object DBSetup {
   val logger = LoggerFactory.getLogger(DBSetup.getClass.getName)
 
-  def setup()(implicit config: WithConfig) {
-    NamedDB(config.db.poolName) autoCommit {implicit ses =>
+  def setup()(implicit config: TagLinkConfig) {
+    NamedDB(config.taglinkDB.poolName) autoCommit {implicit ses =>
       logger.warn("Creating database schema for TAGLINK.")
       sql"""CREATE TABLE tag (location VARCHAR(1024) NOT NULL,
                              tag VARCHAR(1024),

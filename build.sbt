@@ -1,3 +1,7 @@
+import AssemblyKeys._ // put this at the top of the file
+
+assemblySettings
+
 instrumentSettings
 
 ScoverageKeys.highlighting := true
@@ -32,10 +36,7 @@ libraryDependencies ++= Seq(
   "org.dbunit"            % "dbunit"           % "2.5.0"            % "test",
   "org.xerial"            % "sqlite-jdbc"      % "3.8.5-pre1"       % "test",
   "org.hsqldb"            % "hsqldb"           % "2.3.2",
-  "org.scalanlp"         %% "epic"             % "0.2",
   "io.dropwizard.metrics" % "metrics-core"     % "3.1.0",
-  "org.apache.spark"     %% "spark-core"       % "1.1.0",
-  "org.apache.spark"     %% "spark-mllib"      % "1.1.0",
   "org.codemonkey.simplejavamail" % "simple-java-mail"            % "2.1",
   "org.scalamock"                %% "scalamock-scalatest-support" % "3.0.1" % "test"
 )
@@ -51,3 +52,20 @@ scalacOptions ++= Seq(
 )
 
 //testOptions in Test += Tests.Argument("-oF")
+
+resolvers += Resolver.url("Typesafe Releases", url("http://repo.typesafe.com/typesafe/ivy-releases"))(Resolver.ivyStylePatterns)
+
+addCompilerPlugin("org.scala-sbt.sxr" %% "sxr" % "0.3.0")
+
+scalacOptions <+= scalaSource in Compile map { "-P:sxr:base-directory:" + _.getAbsolutePath }
+
+mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+  {
+    case "META-INF/ECLIPSEF.RSA"      => MergeStrategy.first
+    case "META-INF/mailcap"           => MergeStrategy.first
+    case "mailcap"                    => MergeStrategy.first
+    case "mimetypes.default"          => MergeStrategy.first
+    case "META-INF/mimetypes.default" => MergeStrategy.first
+    case x => old(x)
+  }
+}

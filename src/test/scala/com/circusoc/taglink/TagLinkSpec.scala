@@ -26,43 +26,13 @@ class TagLinkSpec extends DBTestCase with FlatSpecLike {
       }
     }
   }
-  val sysConfig = new WithConfig {
-    override val isProduction = false
-    override val db: com.circusoc.simplesite.DB = new com.circusoc.simplesite.DB {
-      override def poolName: Symbol = 'taglinkspecprod
 
-      override def setup() = {
-        Class.forName("org.h2.Driver")
-        val url = s"jdbc:h2:mem:${poolName.name};DB_CLOSE_DELAY=-1"
-        ConnectionPool.add(poolName, url, "sa", "")
-      }
-    }
-    override val hire: Hire = new Hire {}
-    override val mailer: MailerLike = new MailerLike {
-      val mailer = new Mailer(hire.smtpHost, hire.smtpPort, hire.smtpUser, hire.smtpPass)
-
-      override def sendMail(email: Email): Unit = {
-        Thread.sleep(500)
-        println("Sent mail")
-      }
-
-      //mailer.sendMail(email)
-    }
-    override val paths: PathConfig = new PathConfig {}
+  val server = new TagLinkServer with TagLinkConfig {
+    override val taglinkDB = tlconfig.taglinkDB
   }
 
-  implicit val testtools = new TaglinkTestTools {
-    override def server = new TagLinkServer with TagLinkConfig with AuthService with Core {
-      override implicit def actorRefFactory: ActorRefFactory = null
-      override val taglinkDB = tlconfig.taglinkDB
-      override implicit val config = sysConfig
-
-      override protected implicit def system: ActorSystem = null
-    }
-  }
-
-  implicit val foo = testtools.testContentLinker
-  implicit val foo2 = testtools.TagLocationLinker
+  implicit val foo = new TestContentLinker(server)
+  implicit val foo2 = new TagLocationLinker()
 
 
   def getJDBC: Connection = {
@@ -97,7 +67,7 @@ class TagLinkSpec extends DBTestCase with FlatSpecLike {
       val testLoc = testLocTag.location
       val testTag = testLocTag.tag
       val testContent = node.to.node
-      assert(testtools.server.getItem(testLoc.name.name, testTag.name.name).exists(_ == testContent.content))
+      assert(server.getItem(testLoc.name.name, testTag.name.name).exists(_ == testContent.content))
     }
   }
   it should "correctly overwrite items" in {
@@ -118,7 +88,7 @@ class TagLinkSpec extends DBTestCase with FlatSpecLike {
       val testLoc = testLocTag.location
       val testTag = testLocTag.tag
       val testContent = node.to.node
-      assert(testtools.server.getItem(testLoc.name.name, testTag.name.name).exists(_ == testContent.content))
+      assert(server.getItem(testLoc.name.name, testTag.name.name).exists(_ == testContent.content))
     }
   }
   it should "correctly delete items" in {
@@ -135,17 +105,17 @@ class TagLinkSpec extends DBTestCase with FlatSpecLike {
       val testLoc = testLocTag.location
       val testTag = testLocTag.tag
       val testContent = node.to.node
-      assert(testtools.server.getItem(testLoc.name.name, testTag.name.name).exists(_ == testContent.content))
+      assert(server.getItem(testLoc.name.name, testTag.name.name).exists(_ == testContent.content))
     }
     for (loctag <- locationsAndTags) {
-      testtools.server.deleteItems(loctag.joinResult.location.name.name, loctag.joinResult.tag.name.name)
+      server.deleteItems(loctag.joinResult.location.name.name, loctag.joinResult.tag.name.name)
     }
     for (node <- locTagsandContent) {
       val testLocTag = node.from.node
       val testLoc = testLocTag.location
       val testTag = testLocTag.tag
       val testContent = node.to.node
-      assert(testtools.server.getItem(testLoc.name.name, testTag.name.name).isEmpty)
+      assert(server.getItem(testLoc.name.name, testTag.name.name).isEmpty)
     }
   }
 }

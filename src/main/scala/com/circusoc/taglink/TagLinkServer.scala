@@ -1,19 +1,15 @@
 package com.circusoc.taglink
 
-import com.circusoc.simplesite.Main._
-import com.circusoc.simplesite.auth.AuthService
-import com.circusoc.simplesite.users.AuthenticatedUser
-import com.circusoc.simplesite.users.permissions.CanEditTagsPermission
+import spray.routing.Directives._
 import org.slf4j.LoggerFactory
 import scalikejdbc.{ConnectionPool, NamedDB, _}
 import spray.http.{HttpResponse, MediaTypes, StatusCodes}
 import spray.httpx.unmarshalling.BasicUnmarshallers
 import spray.json._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
 trait TagLinkServer {
-  this: TagLinkConfig with AuthService =>
+  this: TagLinkConfig =>
+
   val taglinkRoutes = {
     path("taglink" / Segment / Segment) {(location, tag) =>
       get {
@@ -22,32 +18,28 @@ trait TagLinkServer {
           getItem(location, tag)
         }
       } ~
-    authenticate(authenticateUser) { user: AuthenticatedUser =>
-        authorize(user.hasPermission(CanEditTagsPermission())) {
-          put {
-            entity(BasicUnmarshallers.StringUnmarshaller) { bodyJson: String =>
-              complete {
-                try {
-                  val json = bodyJson.parseJson
-                  val compacted = json.compactPrint
-                  val updated = putItem(location, tag, compacted)
-                  if (updated) StatusCodes.Created
-                  else StatusCodes.OK
-                } catch {
-                  case e: org.parboiled.errors.ParsingException =>
-                    HttpResponse(StatusCodes.BadRequest,
-                      "Could not decode request\n" + e.getMessage)
-                }
-              }
-            }
-          } ~
-          delete {
-            complete {
-              val was404 = deleteItems(location, tag)
-              if (was404) StatusCodes.NotFound
+      put {
+        entity(BasicUnmarshallers.StringUnmarshaller) { bodyJson: String =>
+          complete {
+            try {
+              val json = bodyJson.parseJson
+              val compacted = json.compactPrint
+              val updated = putItem(location, tag, compacted)
+              if (updated) StatusCodes.Created
               else StatusCodes.OK
+            } catch {
+              case e: org.parboiled.errors.ParsingException =>
+                HttpResponse(StatusCodes.BadRequest,
+                  "Could not decode request\n" + e.getMessage)
             }
           }
+        }
+      } ~
+        spray.routing.directives.MethodDirectives.delete {
+        complete {
+          val was404 = deleteItems(location, tag)
+          if (was404) StatusCodes.NotFound
+          else StatusCodes.OK
         }
       }
     }
@@ -78,6 +70,7 @@ trait TagLinkServer {
     }
   }
 }
+
 trait TagLinkConfig {
   val taglinkDB = new DB{}
 }
@@ -87,7 +80,7 @@ trait DB {
   def setup() {
     Class.forName("org.h2.Driver")
     // ConnectionPool.add(poolName, "jdbc:h2:~/tmp/taglink", "sa", "")
-    ConnectionPool.add(poolName, "jdbc:h2:mem:production;DB_CLOSE_DELAY=-1", "sa", "")
+    ConnectionPool.add(poolName, "jdbc:h2:mem:taglink;DB_CLOSE_DELAY=-1", "sa", "")
   }
 }
 

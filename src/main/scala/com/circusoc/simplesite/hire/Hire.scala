@@ -19,7 +19,7 @@ object Hire {
   // evenually.
   def hire(clientEmail: EmailAddress, location: Option[Location], skills: List[String])
           (implicit config: WithConfig): Future[Unit] = {
-    val id = config.db.getDB().localTx {implicit session =>
+    val id = config.db.getDB.localTx {implicit session =>
       val loc = location.map(_.location)
       val k = sql"""INSERT INTO hirerequest (email  , location)
                     VALUES (${clientEmail.email}, $loc)""".updateAndReturnGeneratedKey()()
@@ -34,14 +34,13 @@ object Hire {
   }
 
   def pendingHireQueueSize()(implicit config: WithConfig): Int = {
-    config.db.getDB().readOnly {
-      implicit session =>
+    config.db.getDB.readOnly { implicit session =>
       sql"select count(*) from hirerequest".map(_.int(1)).headOption().apply().getOrElse(0)
     }
   }
 
   def processPendingQueue()(implicit config: WithConfig): Unit = {
-    val sendIds = config.db.getDB().readOnly {implicit session =>
+    val sendIds = config.db.getDB.readOnly {implicit session =>
       sql"select id from hirerequest".map(_.int(1)).toList().apply()
     }
     sendIds.map(processHireRequest(_))
@@ -49,7 +48,7 @@ object Hire {
 
   def processHireRequest(id: Long)(implicit config: WithConfig): Unit = {
     logger.info(s"Processing email $id")
-    config.db.getDB().localTx {implicit session =>
+    config.db.getDB.localTx {implicit session =>
       // Puts us in serializable mode. This
       // is equivalent to a situation where there are
       // no overlapping transactions. So we should be safe

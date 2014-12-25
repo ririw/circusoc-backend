@@ -34,7 +34,7 @@ object Picture {
   }
 
   def defaultPicture(implicit config: WithConfig): Picture = {
-    val imgopt = config.db.getDB().readOnly {implicit ses =>
+    val imgopt = config.db.getDB.readOnly {implicit ses =>
       sql"""SELECT id FROM picture p join default_performer_picture dp on p.id=dp.picture_id""".map{r =>
         Picture(r.int(1))
       }.headOption().apply()
@@ -42,9 +42,11 @@ object Picture {
     imgopt match {
       case Some(img) => img
       case None =>
-        val defaultPicResult = PictureResult(Picture.getClass.getResourceAsStream("com/circusoc/simplesite/pictures/defaultimage.jpg")).get
+        val defaultStream = Picture.getClass.getResourceAsStream("/com/circusoc/simplesite/pictures/defaultimage.jpg")
+        assert(defaultStream != null, "Default picture not found.")
+        val defaultPicResult = PictureResult(defaultStream).get
         val picture = putPicture(defaultPicResult)
-        config.db.getDB().autoCommit{implicit s =>
+        config.db.getDB.autoCommit{implicit s =>
           sql"""INSERT INTO default_performer_picture VALUES (${picture.id}, true)""".execute()()
         }
         picture
@@ -52,7 +54,7 @@ object Picture {
   }
 
   def getPicture(picture: Picture)(implicit config: WithConfig): Option[PictureResult] = {
-    config.db.getDB().readOnly { implicit session =>
+    config.db.getDB.readOnly { implicit session =>
       sql"""SELECT picture, mediatype FROM picture WHERE id=${picture.id}""".
         map{r => 
           val stream = r.blob(1).getBinaryStream
@@ -70,7 +72,7 @@ object Picture {
   }
 
   private def putPicture(picture: PictureResult)(implicit config: WithConfig): Picture = {
-    config.db.getDB().localTx { implicit session =>
+    config.db.getDB.localTx { implicit session =>
       val id = sql"""INSERT INTO picture (picture, mediatype)
                      VALUES (?, ?)""".bind(picture.data, picture.mediaType.value).
         updateAndReturnGeneratedKey()()
@@ -81,7 +83,7 @@ object Picture {
   def deletePicture(picture: Picture, insertingUser: AuthenticatedUser)
                    (implicit config: WithConfig): Boolean = {
     assert(insertingUser.hasPermission(ModifyImagesPermission()))
-    config.db.getDB().localTx {implicit session =>
+    config.db.getDB.localTx {implicit session =>
       val existsResult = sql"""SELECT COUNT(*) FROM picture WHERE id=${picture.id}""".map(_.int(1)).first()()
       val exists = existsResult match {
         case Some(a) =>

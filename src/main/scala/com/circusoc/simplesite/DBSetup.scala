@@ -8,7 +8,7 @@ object DBSetup {
   val logger = LoggerFactory.getLogger(DBSetup.getClass.getName)
 
   def setup()(implicit config: WithConfig ) {
-    config.db.getDB() autoCommit {implicit ses =>
+    config.db.getDB autoCommit {implicit ses =>
       logger.warn("Creating database schema.")
       sql"""CREATE TABLE user (
         id INTEGER PRIMARY KEY AUTO_INCREMENT,

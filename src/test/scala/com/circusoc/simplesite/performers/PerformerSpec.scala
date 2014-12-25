@@ -121,8 +121,8 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       "id" -> JsNumber(1),
       "name" -> JsString("steve"),
       "skills" -> JsArray(JsString("fire"), JsString("acro")),
-      "profile_picture" -> JsString("https://localhost:5050/picture/1"),
-      "other_pictures" -> JsArray(JsString("https://localhost:5050/picture/2")),
+      "profile_picture" -> JsString("https://localhost:8080/picture/1"),
+      "other_pictures" -> JsArray(JsString("https://localhost:8080/picture/2")),
       "shown" -> JsBoolean(false)
     )
     steve.asJsObject.getFields("id")    should be(expected.getFields("id"))
@@ -144,10 +144,10 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       "id" -> JsNumber(2),
       "name" -> JsString("dale"),
       "skills" -> JsArray(JsString("badminton")),
-      "profile_picture" -> JsString("https://localhost:5050/picture/2"),
+      "profile_picture" -> JsString("https://localhost:8080/picture/2"),
       "other_pictures" -> JsArray(
-        JsString("https://localhost:5050/picture/3"),
-        JsString("https://localhost:5050/picture/4")),
+        JsString("https://localhost:8080/picture/3"),
+        JsString("https://localhost:8080/picture/4")),
       "shown" -> JsBoolean(true)
     )
     dale should be(expected)
@@ -161,8 +161,8 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |  "id":3,
         |  "name":"scarlet",
         |  "skills":["contortion", "burlesque"],
-        |  "profile_picture":"https://localhost:5050/picture/4",
-        |  "other_pictures":["https://localhost:5050/picture/5"],
+        |  "profile_picture":"https://localhost:8080/picture/4",
+        |  "other_pictures":["https://localhost:8080/picture/5"],
         |  "shown":true
         |}
       """.stripMargin.parseJson.convertTo[Performer]
@@ -182,7 +182,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |  "id":3,
         |  "name":"scarlet",
         |  "skills":[],
-        |  "profile_picture":"https://localhost:5050/picture/4",
+        |  "profile_picture":"https://localhost:8080/picture/4",
         |  "other_pictures":[],
         |  "shown":true
         |}
@@ -203,7 +203,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |{
         |  "id":3,
         |  "name":"scarlet",
-        |  "profile_picture":"https://localhost:5050/picture/4",
+        |  "profile_picture":"https://localhost:8080/picture/4",
         |  "shown":true
         |}
       """.

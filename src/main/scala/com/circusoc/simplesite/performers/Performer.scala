@@ -20,13 +20,25 @@ case class Performer(id: Long,
                      otherPictures: Set[Picture],
                      shown: Boolean) {
   def addSkill(skill: Skill, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
-    config.db.getDB().localTx {implicit session =>
-      sql"""INSERT INTO performer_skill VALUE ($id, ${skill.skill})""".execute()()
-      this.copy(skills=skills + skill)
+    if (!skills.contains(skill)) {
+      try {
+        config.db.getDB.localTx { implicit session =>
+          sql"""INSERT INTO performer_skill VALUES ($id, ${skill.skill})""".execute()()
+          this.copy(skills = skills + skill)
+        }
+      } catch {
+        // Ignore duplicate keys, which arise when two users try to add
+        // skills at the same time
+        case e: org.h2.jdbc.JdbcSQLException =>
+          if (!e.getMessage.contains("Unique index or primary key violation")) throw e
+          else this
+      }
+    } else {
+      this
     }
   }
   def removeSkill(skill: Skill)(implicit config: WithConfig): Performer = {
-    config.db.getDB().autoCommit {implicit session =>
+    config.db.getDB.autoCommit {implicit session =>
       if (skills.contains(skill)) {
         sql"""DELETE FROM performer_skill WHERE performer_id=$id and skill=${skill.skill}""".execute()()
         this.copy(skills = skills - skill)
@@ -38,7 +50,7 @@ case class Performer(id: Long,
 
   def addPicture(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     if (otherPictures.contains(picture)) {
-      config.db.getDB().autoCommit {implicit session =>
+      config.db.getDB.autoCommit {implicit session =>
         sql"""INSERT INTO performer_picture VALUES ($id, ${picture.id})""".execute()()
         this.copy(otherPictures=otherPictures + picture)
       }
@@ -49,7 +61,7 @@ case class Performer(id: Long,
 
   def deletePicture(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     if (otherPictures.contains(picture)) {
-      config.db.getDB().autoCommit { implicit session =>
+      config.db.getDB.autoCommit { implicit session =>
         sql"""DELETE FROM performer_pictures WHERE performer_id=$id AND picture_id=${picture.id}""".execute()()
         this.copy(otherPictures = otherPictures - picture)
       }
@@ -59,7 +71,7 @@ case class Performer(id: Long,
   }
 
   def setProfilePic(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
-    config.db.getDB().autoCommit { implicit session =>
+    config.db.getDB.autoCommit { implicit session =>
       sql"""UPDATE performer SET profile_picture=${picture.id} WHERE id=$id""".execute()()
     }
     this.copy(profilePicture=picture)
@@ -124,7 +136,7 @@ object Performer {
   }
   
   def getPerformerByID(id: Long)(implicit config: WithConfig): Option[Performer] = {
-    val performerDetails = config.db.getDB().readOnly{implicit session =>
+    val performerDetails = config.db.getDB.readOnly{implicit session =>
       val perfTableCollection = sql"""
         SELECT id, name, profile_picture_id, shown FROM performer
         WHERE id=$id
@@ -143,7 +155,7 @@ object Performer {
   def newPerformer(name: String, shown: Boolean, mayUpdateUserProof: MayAlterPerformersProof)
                   (implicit config: WithConfig): Performer = {
     val picture = Picture.defaultPicture.id
-    val performerid = config.db.getDB().autoCommit {implicit session =>
+    val performerid = config.db.getDB.autoCommit {implicit session =>
       sql"""INSERT INTO performer (name,  profile_picture_id, shown)
                            VALUES ($name, $picture,          $shown)""".updateAndReturnGeneratedKey()()
     }

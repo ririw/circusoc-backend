@@ -15,11 +15,11 @@ trait WithConfig {
 
 trait DB {
   def poolName: Symbol = 'production
-  def getDB() = NamedDB(poolName)
+  def getDB: NamedDB = NamedDB(poolName)
   def setup() {
     Class.forName("org.h2.Driver")
     ConnectionPool.add(poolName, "jdbc:h2:~/tmp/test", "sa", "")
-    // ConnectionPool.add('production, "jdbc:h2:mem:production;DB_CLOSE_DELAY=-1", "sa", "")
+    // ConnectionPool.add(poolName, "jdbc:h2:mem:production;DB_CLOSE_DELAY=-1", "sa", "")
   }
 }
 
@@ -43,6 +43,6 @@ trait MailerLike {
   def sendMail(email: Email): Unit
 }
 trait PathConfig {
-  val baseUrl: URL = new URL("https://localhost:5050")
+  val baseUrl: URL = new URL("https://localhost:8080")
   val cdnUrl: URL = baseUrl
 }

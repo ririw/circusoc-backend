@@ -48,15 +48,15 @@ trait PictureService extends HttpService {
       }
     } ~
     path("picture" / LongNumber) {id =>
-      (get & autoChunk(2048)) {
-          complete {
-            val r: HttpResponse = Picture(id).get().map { picture =>
-              HttpResponse(StatusCodes.OK, picture.data).
-                withHeaders(HttpHeaders.`Content-Type`(picture.mediaType))
-            }.getOrElse(HttpResponse(StatusCodes.NotFound))
-            r
+      get {
+        Picture(id).get().map { picture =>
+          respondWithMediaType(picture.mediaType) {
+            complete {
+              HttpResponse(StatusCodes.OK, picture.data)
+            }
           }
-        } ~
+        }.getOrElse(complete{HttpResponse(StatusCodes.NotFound)})
+      } ~
       delete {
         respondWithMediaType(MediaTypes.`application/json`) {
           authenticate(authenticateUser) { user =>

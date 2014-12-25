@@ -55,41 +55,41 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
 
   it should "have different CDN and normal URLs" in {
     val picture = Picture(1)
-    picture.url() should be(new URL("https://localhost:5050/picture/1"))
+    picture.url() should be(new URL("https://localhost:8080/picture/1"))
     picture.cdnUrl() should be(new URL("https://localhost:5051/picture/1"))
   }
 
   it should "work for large IDs" in {
     forAll { id: Long => whenever(id > 0) {
         val picture = Picture(id)
-        picture.url() should be(new URL(s"https://localhost:5050/picture/$id"))
+        picture.url() should be(new URL(s"https://localhost:8080/picture/$id"))
         picture.cdnUrl() should be(new URL(s"https://localhost:5051/picture/$id"))
     }}
   }
 
   it should "find the right picture from a path" in {
     forAll { id: Long => whenever(id > 0) {
-      val url = new URL(s"https://localhost:5050/picture/$id")
+      val url = new URL(s"https://localhost:8080/picture/$id")
       val picture = Picture.fromURL(url)
-      picture.url() should be(new URL(s"https://localhost:5050/picture/$id"))
+      picture.url() should be(new URL(s"https://localhost:8080/picture/$id"))
     }}
   }
   it should "reject derp urls in" in {
     forAll { id: Long => whenever(id > 0) {
       intercept[AssertionError] {
-        val url = new URL(s"https://localhost:5050/$id")
+        val url = new URL(s"https://localhost:8080/$id")
         Picture.fromURL(url)
       }
       intercept[AssertionError] {
-        val url = new URL(s"https://localhost:5050/picture/foo/$id")
+        val url = new URL(s"https://localhost:8080/picture/foo/$id")
         Picture.fromURL(url)
       }
       intercept[AssertionError] {
-        val url = new URL(s"https://localhost:5050/picture/")
+        val url = new URL(s"https://localhost:8080/picture/")
         Picture.fromURL(url)
       }
       intercept[NumberFormatException] {
-        val url = new URL(s"https://localhost:5050/picture/asdasd123")
+        val url = new URL(s"https://localhost:8080/picture/asdasd123")
         Picture.fromURL(url)
       }
     }}
@@ -98,7 +98,7 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
   it should "deserialize pictures" in {
     import spray.json._
     implicit val implSkill = new PictureJsonFormatter()
-    val pic1 = "\"https://localhost:5050/picture/4\""
+    val pic1 = "\"https://localhost:8080/picture/4\""
     pic1.parseJson.convertTo[Picture] should be(Picture(4))
     val pic2 = "1"
     intercept[spray.json.DeserializationException] {
@@ -109,7 +109,7 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
       pic3.parseJson.convertTo[Picture]
     }
 
-    val pic4 = "\"https://localhost:5050/picture/derp\""
+    val pic4 = "\"https://localhost:8080/picture/derp\""
     intercept[java.lang.NumberFormatException] {
       pic4.parseJson.convertTo[Picture]
     }

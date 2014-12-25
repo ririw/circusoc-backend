@@ -1,10 +1,17 @@
 package com.circusoc
 
 import akka.actor.ActorSystem
+import com.circusoc.simplesite._
+import com.circusoc.simplesite.auth.AuthService
+import com.circusoc.simplesite.hire.HireService
+import com.circusoc.simplesite.performers.PerformerTestGraph
+import com.circusoc.simplesite.pictures.{PictureService, PictureTestGraph}
+import com.circusoc.simplesite.tracking.TrackingEventService
 import com.circusoc.taglink._
-import spray.routing.SimpleRoutingApp
 import com.circusoc.testgraph.testgraph._
-import scalikejdbc.ConnectionPool
+import org.codemonkey.simplejavamail.{Email, Mailer}
+import scalikejdbc.{ConnectionPool, NamedDB}
+import spray.routing.SimpleRoutingApp
 
 /**
  * The name of the game here is to create little setups, each of which describes the
@@ -19,6 +26,7 @@ object TestTest extends App {
   }
   command match {
     case s if s.startsWith("taglink:") => taglink(s.drop("taglink:".length))
+    case "performers" => performers()
     case s => default(s)
   }
 
@@ -29,7 +37,7 @@ object TestTest extends App {
   def taglink(subcommand: String): Unit = {
     val server = new TagLink()
     server.taglinkDB.setup()
-    DBSetup.setup()(server)
+    com.circusoc.taglink.DBSetup.setup()(server)
     implicit val contentjoin = new TestContentLinker(server)
     implicit val tagLocLinker = new TagLocationLinker()
 
@@ -49,10 +57,83 @@ object TestTest extends App {
     }
     server.serve()
   }
+
+  def performers(): Unit = {
+    val server = new MainSite()
+    server.config.db.setup()
+    implicit val config = server.config
+    com.circusoc.simplesite.DBSetup.setup
+    val performersF = PerformerTestGraph.performerNodeFactory
+    val skillF = PerformerTestGraph.skillNodeFactory
+    val picF = PictureTestGraph.pictureFactory
+    implicit val performerPictureJoiner = PerformerTestGraph.performerPictureJoiner
+    implicit val performerProfilePicJoiner = PerformerTestGraph.performerProfilePicJoiner
+    implicit val performerSkillJoiner = PerformerTestGraph.performerSkillJoiner
+
+    val performers = List.fill(10)(performersF.randomNode)
+    val skills = List.fill(10)(skillF.randomNode)
+    val otherpics = List.fill(40)(picF.randomNode)
+    val profilePics = List.fill(10)(picF.randomNode)
+
+    performers.join.bijectiveJoin(profilePics)(performerPictureJoiner)
+    performers.join.randomSurjectionJoin(otherpics)(performerPictureJoiner)
+    performers.join.randomJoin(skills)
+
+    server.serve()
+  }
 }
 
+
+class MainSite extends SimpleRoutingApp
+  with Core
+  with AuthService
+  with HireService
+  with PictureService
+  with TrackingEventService {
+  implicit val system = ActorSystem("my-system")
+  override implicit val config: WithConfig = new WithConfig {
+    override val isProduction = false
+    override val db = new com.circusoc.simplesite.DB{
+      override def poolName: Symbol = 'mainsite
+      override def getDB: NamedDB = NamedDB(poolName)
+      override def setup() {
+        Class.forName("org.h2.Driver")
+        ConnectionPool.add(poolName, "jdbc:h2:mem:mainsite;DB_CLOSE_DELAY=-1", "sa", "")
+      }
+    }
+    override val hire: Hire = new Hire {}
+    override val mailer: MailerLike = new MailerLike {
+      val mailer = new Mailer(hire.smtpHost, hire.smtpPort, hire.smtpUser, hire.smtpPass)
+      override def sendMail(email: Email): Unit = {
+        Thread.sleep(500)
+        println("Sent mail")
+      }
+      //mailer.sendMail(email)
+    }
+    override val paths: PathConfig = new PathConfig {}
+  }
+
+  def serve(): Unit = {
+    startServer(interface = "localhost", port = 8080) {
+      path("hello") {
+        get {
+          complete {
+            "Say hello to spray"
+          }
+        }
+      } ~
+      authroutes ~
+      hireRoutes ~
+      pictureRoutes ~
+      trackingRoutes
+    }
+  }
+}
+
+
+
 class TagLink extends TagLinkServer with TagLinkConfig with SimpleRoutingApp {
-  override val taglinkDB = new DB {
+  override val taglinkDB = new com.circusoc.taglink.DB {
     override def poolName: Symbol = 'taglinktest
     override def setup() {
       Class.forName("org.h2.Driver")
@@ -65,3 +146,5 @@ class TagLink extends TagLinkServer with TagLinkConfig with SimpleRoutingApp {
     startServer(interface = "localhost", port = 8080)(taglinkRoutes)
   }
 }
+
+

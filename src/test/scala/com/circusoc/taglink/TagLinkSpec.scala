@@ -4,7 +4,7 @@ import java.sql.{Connection, DriverManager}
 
 import akka.actor.{ActorRefFactory, ActorSystem}
 import com.circusoc.simplesite._
-import com.circusoc.simplesite.auth.AuthService
+import com.circusoc.simplesite.services.AuthService
 import com.circusoc.testgraph.testgraph._
 import org.codemonkey.simplejavamail.{Email, Mailer}
 import org.dbunit.DBTestCase

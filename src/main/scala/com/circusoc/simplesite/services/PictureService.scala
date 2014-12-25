@@ -1,16 +1,17 @@
-package com.circusoc.simplesite.pictures
+package com.circusoc.simplesite.services
 
-import spray.routing.HttpService
-import com.circusoc.simplesite.Core
-import spray.http._
-import spray.http.HttpResponse
-import com.circusoc.simplesite.users.permissions.ModifyImagesPermission
-import scala.concurrent.ExecutionContext.Implicits.global
 import java.io.ByteArrayInputStream
+
+import com.circusoc.simplesite.Core
+import com.circusoc.simplesite.pictures.{MediaTypeException, Picture, PictureJsonFormatter, PictureResult}
+import com.circusoc.simplesite.services.AuthService
+import com.circusoc.simplesite.users.permissions.ModifyImagesPermission
+import spray.http.{HttpResponse, _}
 import spray.json._
-import java.nio.file.Files
-import scala.util.{Try, Success, Failure}
-import com.circusoc.simplesite.auth.{Auth, AuthService}
+import spray.routing.HttpService
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 trait PictureService extends HttpService {
   this: Core with AuthService =>

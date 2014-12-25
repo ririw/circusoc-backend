@@ -2,11 +2,9 @@ package com.circusoc
 
 import akka.actor.ActorSystem
 import com.circusoc.simplesite._
-import com.circusoc.simplesite.auth.AuthService
-import com.circusoc.simplesite.hire.HireService
 import com.circusoc.simplesite.performers.PerformerTestGraph
-import com.circusoc.simplesite.pictures.{PictureService, PictureTestGraph}
-import com.circusoc.simplesite.tracking.TrackingEventService
+import com.circusoc.simplesite.pictures.PictureTestGraph
+import com.circusoc.simplesite.services.{AuthService, HireService, PictureService, TrackingEventService}
 import com.circusoc.taglink._
 import com.circusoc.testgraph.testgraph._
 import org.codemonkey.simplejavamail.{Email, Mailer}

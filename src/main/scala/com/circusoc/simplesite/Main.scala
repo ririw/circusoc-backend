@@ -1,12 +1,9 @@
 package com.circusoc.simplesite
 
+import com.circusoc.simplesite.services.{AuthService, HireService, PictureService, TrackingEventService}
 import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
 import org.codemonkey.simplejavamail.{Mailer, Email}
-import com.circusoc.simplesite.hire.HireService
-import com.circusoc.simplesite.pictures.PictureService
-import com.circusoc.simplesite.auth.AuthService
-import com.circusoc.simplesite.tracking.TrackingEventService
 
 object Main extends App
             with SimpleRoutingApp

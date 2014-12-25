@@ -1,17 +1,17 @@
-package com.circusoc.simplesite.hire
+package com.circusoc.simplesite.services
 
-import spray.routing.HttpService
 import com.circusoc.simplesite.Core
-import spray.json._
-import DefaultJsonProtocol._
+import com.circusoc.simplesite.hire._
 import spray.httpx.SprayJsonSupport
+import spray.json._
+import spray.routing.HttpService
 
 trait HireService extends HttpService with SprayJsonSupport {
   this: Core =>
   val hireRoutes = {
     path("hire") {
       (put | post) {
-        import HireRequestJsonSupport._
+        import com.circusoc.simplesite.hire.HireRequestJsonSupport._
         entity(as[HireRequest]) { hire =>
           complete {
             Hire.hire(EmailAddress(hire.email), hire.location.map(Location), hire.skills)

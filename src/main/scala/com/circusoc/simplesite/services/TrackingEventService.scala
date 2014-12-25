@@ -1,15 +1,15 @@
-package com.circusoc.simplesite.tracking
+package com.circusoc.simplesite.services
 
-import spray.routing.HttpService
 import com.circusoc.simplesite.Core
-import spray.http.StatusCodes
-import spray.http.HttpResponse
+import com.circusoc.simplesite.tracking.{PageActionClientEvent, PageViewClientEvent, PageViewJsonReaders, TrackedEvent}
+import spray.http.{HttpResponse, StatusCodes}
 import spray.httpx.SprayJsonSupport
+import spray.routing.HttpService
 
 trait TrackingEventService extends HttpService with SprayJsonSupport {
   this: Core =>
   val trackingRoutes = {
-    import PageViewJsonReaders._
+    import com.circusoc.simplesite.tracking.PageViewJsonReaders._
     post {
       path("tracking" / "pageview") {
         entity(as[PageViewClientEvent]) {

@@ -28,15 +28,17 @@ case class Performer(id: Long,
       } catch {
         // Ignore duplicate keys, which arise when two users try to add
         // skills at the same time
+        // $COVERAGE-OFF$
         case e: org.h2.jdbc.JdbcSQLException =>
-          if (!e.getMessage.contains("Unique index or primary key violation")) throw e
-          else this
+          if (e.getMessage.contains("Unique index or primary key violation")) this
+          else throw e
+        // $COVERAGE-ON$
       }
     } else {
       this
     }
   }
-  def removeSkill(skill: Skill)(implicit config: WithConfig): Performer = {
+  def removeSkill(skill: Skill, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     config.db.getDB.autoCommit {implicit session =>
       if (skills.contains(skill)) {
         sql"""DELETE FROM performer_skill WHERE performer_id=$id and skill=${skill.skill}""".execute()()

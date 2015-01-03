@@ -17,5 +17,10 @@
     <performer_skill performer_id="4" skill="fire"></performer_skill>
 
     <performer id="5" name="Alexa" profile_picture_id="7" shown="true"></performer>
+
+    <performer id="6" name="Fargsnooth" profile_picture_id="1" shown="true"></performer>
+
+    <performer id="7" name="Biergliden" profile_picture_id="1" shown="true"></performer>
+    <performer_skill performer_id="7" skill="fadmington"></performer_skill>
 </dataset>
 

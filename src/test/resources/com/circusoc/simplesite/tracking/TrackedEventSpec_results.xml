@@ -2,18 +2,21 @@
     <page_view
             clientid="page_view"
             sessionid="ewq"
+            pageid="wat"
             viewtime="2014-01-01 00:00:00.0"
             page="http://www.google.com"
             referrer="http://www.bing.com"></page_view>
     <page_view
             clientid="page_view"
             sessionid="qwe"
+            pageid="wat"
             viewtime="2014-01-01 00:00:00.0"
             page="http://www.google.com"></page_view>
 
     <action
             clientid="action"
             sessionid="aaa"
+            pageid="fooo"
             viewtime="2014-01-01 00:00:00.0"
             label="HireNow"
             page="http://www.google.com"
@@ -21,6 +24,7 @@
     <action
             clientid="action"
             sessionid="bbb"
+            pageid="fooo"
             viewtime="2014-01-01 00:00:00.0"
             page="http://www.google.com"
             label="HireNow"></action>

@@ -100,6 +100,7 @@ object DBSetup {
       sql"""CREATE TABLE tracking.page_views(
         clientid VARCHAR(1024) NOT NULL,
         sessionid VARCHAR(1024) NOT NULL,
+        pageid VARCHAR(1024) NOT NULL,
         viewtime TIMESTAMP NOT NULL,
         page VARCHAR(1024) NOT NULL,
         referrer VARCHAR(1024)
@@ -107,6 +108,7 @@ object DBSetup {
       sql"""CREATE TABLE tracking.page_actions(
         clientid VARCHAR(1024) NOT NULL,
         sessionid VARCHAR(1024) NOT NULL,
+        pageid VARCHAR(1024) NOT NULL,
         viewtime TIMESTAMP NOT NULL,
         page VARCHAR(1024) NOT NULL,
         label VARCHAR(1024) NOT NULL,

@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream
 
 import com.circusoc.simplesite.Core
 import com.circusoc.simplesite.pictures.{MediaTypeException, Picture, PictureJsonFormatter, PictureResult}
-import com.circusoc.simplesite.services.AuthService
 import com.circusoc.simplesite.users.permissions.ModifyImagesPermission
 import spray.http.{HttpResponse, _}
 import spray.json._

@@ -1,7 +1,8 @@
 package com.circusoc.simplesite.tracking
 
-import org.joda.time
 import java.net.URL
+import org.joda.time.DateTime
+
 import scala.concurrent.{ExecutionContext, Future}
 import com.circusoc.simplesite.WithConfig
 import scalikejdbc._
@@ -18,18 +19,23 @@ import scalikejdbc.NamedDB
  *
  * Sessions are individual use periods, for example,
  * the life of a tab in a browser. I suggest using sessionStorage
+ *
+ * Finally, page ids identify indivdual page views, and they
+ * link actions to pages that they happen on.
  */
 trait TrackedEvent {
   val clientID: ClientID
   val sessionID: SessionID
-  val timestamp: time.DateTime
+  val pageID: PageID
+  val timestamp: DateTime
   val page: URL
 }
 
 case class PageView(
   clientID: ClientID,
   sessionID: SessionID,
-  timestamp: time.DateTime,
+  pageID: PageID,
+  timestamp: DateTime,
   page: URL,
   referrer: Option[URL]
 ) extends TrackedEvent
@@ -37,7 +43,8 @@ case class PageView(
 case class PageAction(
   clientID: ClientID,
   sessionID: SessionID,
-  timestamp: time.DateTime,
+  pageID: PageID,
+  timestamp: DateTime,
   page: URL,
   actionSpec: ActionSpec
 )
@@ -45,6 +52,7 @@ case class PageAction(
 case class ActionSpec(label: String, section: Option[String])
 case class SessionID(sessionID: String) extends AnyVal
 case class ClientID(clientID: String) extends AnyVal
+case class PageID(pageID: String) extends AnyVal
 
 object TrackedEvent {
   def trackEvent(event: PageView)(implicit config: WithConfig): Future[Unit] = {
@@ -55,6 +63,7 @@ object TrackedEvent {
             INSERT INTO tracking.page_views VALUES (
               ${event.clientID.clientID},
               ${event.sessionID.sessionID},
+              ${event.pageID.pageID},
               ${event.timestamp},
               ${event.page.toString},
               ${event.referrer.map(_.toString)}
@@ -72,6 +81,7 @@ object TrackedEvent {
             INSERT INTO tracking.page_actions VALUES (
               ${event.clientID.clientID},
               ${event.sessionID.sessionID},
+              ${event.pageID.pageID},
               ${event.timestamp},
               ${event.page.toString},
               ${event.actionSpec.label},
@@ -85,22 +95,26 @@ object TrackedEvent {
 case class PageViewClientEvent(
   clientID: String,
   sessionID: String,
+  pageID: String,
   dt: Long,
   page: String,
   referrer: Option[String]
 ) {
   def pageView = {
+    val t = new DateTime()
     PageView(
       ClientID(clientID),
       SessionID(sessionID),
-      new time.DateTime().minus(dt),
+      PageID(pageID),
+      t.minus(dt),
       new URL(page),
-      referrer.map(s => new URL(s)))
+      referrer.map{s => new URL(s)})
   }
 }
 case class PageActionClientEvent(
   clientID: String,
   sessionID: String,
+  pageID: String,
   dt: Long,
   page: String,
   label: String,
@@ -110,15 +124,16 @@ case class PageActionClientEvent(
     PageAction(
       ClientID(clientID),
       SessionID(sessionID),
-      new time.DateTime().minus(dt),
+      PageID(pageID),
+      new DateTime().minus(dt),
       new URL(page),
       ActionSpec(label, section))
   }
 }
 
 object PageViewJsonReaders extends DefaultJsonProtocol {
-  implicit val pageViewReader: RootJsonReader[PageViewClientEvent] = jsonFormat5(PageViewClientEvent)
-  implicit val pageViewWriter: RootJsonWriter[PageViewClientEvent] = jsonFormat5(PageViewClientEvent)
-  implicit val pageActionReader: RootJsonReader[PageActionClientEvent] = jsonFormat6(PageActionClientEvent)
-  implicit val pageActionWriter: RootJsonWriter[PageActionClientEvent] = jsonFormat6(PageActionClientEvent)
+  implicit val pageViewReader: RootJsonReader[PageViewClientEvent] = jsonFormat6(PageViewClientEvent)
+  implicit val pageViewWriter: RootJsonWriter[PageViewClientEvent] = jsonFormat6(PageViewClientEvent)
+  implicit val pageActionReader: RootJsonReader[PageActionClientEvent] = jsonFormat7(PageActionClientEvent)
+  implicit val pageActionWriter: RootJsonWriter[PageActionClientEvent] = jsonFormat7(PageActionClientEvent)
 }

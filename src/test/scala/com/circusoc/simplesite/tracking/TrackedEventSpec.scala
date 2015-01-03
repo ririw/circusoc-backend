@@ -70,6 +70,7 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
     val event = PageView(
       ClientID("page_view"),
       SessionID("ewq"),
+      PageID("wat"),
       t,
       new URL("http://www.google.com"),
       Some(new URL("http://www.bing.com"))
@@ -95,6 +96,7 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
     val event = PageAction(
       ClientID("action"),
       SessionID("aaa"),
+      PageID("fooo"),
       t,
       new URL("http://www.google.com"),
       ActionSpec("HireNow", Some("UserCard"))
@@ -121,6 +123,7 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
     val event = PageViewClientEvent(
       "asd",
       "qwe",
+      "trf",
       -5000,
       "http://www.google.com/home",
       None
@@ -140,6 +143,7 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
       """{
         |  "clientID": "asd",
         |  "sessionID": "qwe",
+        |  "pageID": "mew",
         |  "dt": -5000,
         |  "page": "http://www.google.com/home"
         |}""".stripMargin
@@ -147,6 +151,7 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
     val event = PageViewClientEvent(
       "asd",
       "qwe",
+      "mew",
       -5000,
       "http://www.google.com/home",
       None
@@ -158,12 +163,13 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
       """{
         |  "clientID": "asd",
         |  "sessionID": "qwe",
+        |  "pageID": "jer",
         |  "dt": -5000,
         |  "page": "http://www.google.com/home",
         |  "referrer": "http://www.bing.com"
         |}""".stripMargin
     val event2 = PageViewClientEvent(
-      "asd", "qwe", -5000, "http://www.google.com/home", Some("http://www.bing.com")
+      "asd", "qwe", "jer", -5000, "http://www.google.com/home", Some("http://www.bing.com")
     )
     json2.parseJson.convertTo[PageViewClientEvent] should be(event2)
     event2.toJson.prettyPrint should be(json2)
@@ -175,6 +181,7 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
     val event = PageActionClientEvent(
       "asd",
       "qwe",
+      "asdj",
       -5000,
       "http://www.google.com/home",
       "click",
@@ -195,13 +202,14 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
       """{
         |  "clientID": "asd",
         |  "sessionID": "qwe",
+        |  "pageID": "red",
         |  "dt": -5000,
         |  "page": "http://www.google.com/home",
         |  "label": "click",
         |  "section": "test"
         |}""".stripMargin
     val event = PageActionClientEvent(
-      "asd", "qwe", -5000, "http://www.google.com/home", "click", Some("test")
+      "asd", "qwe", "red", -5000, "http://www.google.com/home", "click", Some("test")
     )
     json.parseJson.convertTo[PageActionClientEvent] should be(event)
     event.toJson.prettyPrint should be(json)
@@ -210,12 +218,13 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
       """{
         |  "clientID": "asd",
         |  "sessionID": "qwe",
+        |  "pageID": "tgfr",
         |  "dt": -5000,
         |  "page": "http://www.google.com/home",
         |  "label": "click"
         |}""".stripMargin
     val event2 = PageActionClientEvent(
-      "asd", "qwe", -5000, "http://www.google.com/home", "click", None
+      "asd", "qwe", "tgfr", -5000, "http://www.google.com/home", "click", None
     )
     json2.parseJson.convertTo[PageActionClientEvent] should be(event2)
     event2.toJson.prettyPrint should be(json2)

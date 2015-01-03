@@ -1,18 +1,22 @@
 package com.circusoc.simplesite.performers
 
-import org.dbunit.DBTestCase
-import org.scalatest.{BeforeAndAfter, FlatSpecLike}
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.Matchers._
-import java.sql.{DriverManager, Connection}
+import java.sql.{Connection, DriverManager}
+
 import com.circusoc.simplesite._
+import com.circusoc.simplesite.pictures.Picture
+import org.codemonkey.simplejavamail.Email
+import org.dbunit.DBTestCase
 import org.dbunit.database.DatabaseConnection
-import org.dbunit.operation.DatabaseOperation
 import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
+import org.dbunit.operation.DatabaseOperation
+import org.scalatest.Matchers._
+import org.scalatest.prop.PropertyChecks
+import org.scalatest.{BeforeAndAfter, FlatSpecLike}
 import scalikejdbc.ConnectionPool
-import org.codemonkey.simplejavamail.Email
-import com.circusoc.simplesite.pictures.{PictureJsonFormatter, Picture}
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import scala.concurrent.Future
 
 class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with PropertyChecks {
   implicit val config = new WithConfig {
@@ -111,6 +115,38 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         Performer.getPerformerByID(id) should be(None)
       }
     }
+  }
+
+  it should "add skills & not re-add skills" in {
+    val fargsnooth = Performer.getPerformerByID(6).get
+    fargsnooth.skills should be(Set())
+    val fargsnoothen = fargsnooth.addSkill(Skill("Being a drudgeon"), new DebugMayAlterPerformerProof())
+    fargsnoothen.skills should be(Set(Skill("Being a drudgeon")))
+    val fargsnooth_verify = Performer.getPerformerByID(6).get
+    fargsnooth_verify.skills should be(Set(Skill("Being a drudgeon")))
+    val fargsnoothen_2 = fargsnooth_verify.addSkill(Skill("Being a drudgeon"), new DebugMayAlterPerformerProof())
+    val fargsnooth_verify_2 = Performer.getPerformerByID(6).get
+    fargsnooth_verify_2 .skills should be(Set(Skill("Being a drudgeon")))
+  }
+
+  it should "ignore duplicate skills" in {
+    val proof = new DebugMayAlterPerformerProof()
+    val skill: Skill = Skill("acro")
+    List.fill(50)(Future{
+      val fargsnooth = Performer.getPerformerByID(6).get
+      fargsnooth.addSkill(skill, proof)
+    })
+  }
+
+  it should "remove skills and not remove made-up skills" in {
+    val biergliden = Performer.getPerformerByID(7).get
+    biergliden.skills should be(Set(Skill("fadmington")))
+    val biergliden_2 = biergliden.
+      removeSkill(Skill("fadmington"), new DebugMayAlterPerformerProof()).
+      removeSkill(Skill("Madmington"), new DebugMayAlterPerformerProof())
+    biergliden_2.skills should be(Set())
+    val biergliden_3 = Performer.getPerformerByID(7).get
+    biergliden_3.skills should be(Set())
   }
 
   "the performer serialization code" should "serialize a full performer" in {
@@ -225,5 +261,22 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       skill2.parseJson.convertTo[Skill]
     }
   }
+}
 
+
+class MayAlterPerformersProofSpec extends FlatSpecLike {
+  it should "not initialize when we are in production" in {
+    implicit val config = new WithConfig {
+      override val isProduction = true
+      override val db: DB = new DB {}
+      override val hire: Hire = new Hire {}
+      override val paths: PathConfig = new PathConfig {}
+      override val mailer: MailerLike = new MailerLike {
+        override def sendMail(email: Email): Unit = ???
+      }
+    }
+    intercept[AssertionError] {
+      new DebugMayAlterPerformerProof()
+    }
+  }
 }

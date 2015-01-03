@@ -46,7 +46,6 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with Pro
     Hire.pendingHireQueueSize() should be(0)
   }
 
-
   it should "send emails and delete their log entries with non locations" in {
     var sends = 0
     def mockSend(e: Email) {
@@ -95,6 +94,7 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with Pro
     Hire.pendingHireQueueSize()(mockConfig2) should be(0)
     goodSends should be(0)
   }
+
   it should "not send made up emails" in {
     var goodSends = 0
     def goodSend(e: Email) {

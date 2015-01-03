@@ -11,6 +11,7 @@ trait WithConfig {
   val mailer: MailerLike
   val paths: PathConfig
   val isProduction = false
+  def defaultPictureStream = this.getClass.getResourceAsStream("/com/circusoc/simplesite/pictures/defaultimage.jpg")
 }
 
 trait DB {

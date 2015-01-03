@@ -34,7 +34,7 @@ object Picture {
   }
 
   def defaultPicture(implicit config: WithConfig): Picture = {
-    val imgopt = config.db.getDB.readOnly {implicit ses =>
+    val imgopt = config.db.getDB.readOnly {implicit session =>
       sql"""SELECT id FROM picture p join default_performer_picture dp on p.id=dp.picture_id""".map{r =>
         Picture(r.int(1))
       }.headOption().apply()
@@ -42,7 +42,7 @@ object Picture {
     imgopt match {
       case Some(img) => img
       case None =>
-        val defaultStream = Picture.getClass.getResourceAsStream("/com/circusoc/simplesite/pictures/defaultimage.jpg")
+        val defaultStream = config.defaultPictureStream
         assert(defaultStream != null, "Default picture not found.")
         val defaultPicResult = PictureResult(defaultStream).get
         val picture = putPicture(defaultPicResult)
@@ -50,6 +50,14 @@ object Picture {
           sql"""INSERT INTO default_performer_picture VALUES (${picture.id}, true)""".execute()()
         }
         picture
+    }
+  }
+
+  def setDefaultPicture(picture: Picture)(implicit config: WithConfig): Picture = {
+    config.db.getDB.localTx { implicit session =>
+      sql"""DELETE FROM default_performer_picture""".execute()()
+      sql"""INSERT INTO default_performer_picture VALUES (${picture.id}, true)""".execute()()
+      picture
     }
   }
 

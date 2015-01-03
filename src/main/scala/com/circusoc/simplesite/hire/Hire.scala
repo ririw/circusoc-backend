@@ -53,6 +53,7 @@ object Hire {
       // is equivalent to a situation where there are
       // no overlapping transactions. So we should be safe
       // from problems.
+      //TODO: Unset the lock mode
       sql"SET LOCK_MODE 1".execute()()
       val emailLoc = sql"""select email, location
                            from hirerequest where id=$id""".
@@ -62,8 +63,6 @@ object Hire {
         case Some((clientEmail, location)) =>
           val skills = sql"""select skill from hirerequest_skill where hirerequest_id=$id""".
             map(_.string(1)).toList()()
-          sql"""delete from hirerequest where id=$id""".execute()()
-          sql"""delete from hirerequest_skill where hirerequest_id=$id""".execute()()
           val email = new Email()
           email.setFromAddress(config.hire.fromName, config.hire.fromEmail)
           email.setSubject(config.hire.subject)
@@ -77,6 +76,8 @@ object Hire {
           logger.info(s"Sending email $id")
           config.mailer.sendMail(email)
           logger.info(s"Sent email $id")
+          sql"""delete from hirerequest where id=$id""".execute()()
+          sql"""delete from hirerequest_skill where hirerequest_id=$id""".execute()()
       }
     }
   }

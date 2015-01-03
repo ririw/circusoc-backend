@@ -74,6 +74,7 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
       picture.url() should be(new URL(s"https://localhost:8080/picture/$id"))
     }}
   }
+
   it should "reject derp urls in" in {
     forAll { id: Long => whenever(id > 0) {
       intercept[AssertionError] {
@@ -173,6 +174,47 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
   it should "not delete non-existent images" in {
     val result = Picture.deletePicture(Picture(10000), Misc.superuser)
     result should be(false)
+  }
+
+  it should "show the default picture" in {
+    val defaultpicture = Picture.defaultPicture
+    Picture.getPicture(defaultpicture) should not be None
+    Picture.getPicture(defaultpicture).get should be(
+      pictureFromTestFile("defaultimage.jpg"))
+  }
+
+  it should "replace the default picture" in {
+    val picture = pictureFromTestFile("test.png")
+    val user = Misc.superuser
+    val resultPic = Picture.putPicture(picture, user)
+    Picture.setDefaultPicture(resultPic)
+    Picture.getPicture(Picture.defaultPicture).get should be(picture)
+  }
+
+  it should "fail to insert non-existent default pictures" in {
+    val config_nopic = new WithConfig {
+      override val db: DB = new DB {
+        override val poolName = 'picturespec_default
+        override def setup() = {
+          Class.forName("org.h2.Driver")
+          val url = s"jdbc:h2:mem:${poolName.name};DB_CLOSE_DELAY=-1"
+          ConnectionPool.add(poolName, url, "sa", "")
+        }
+      }
+      override val hire: Hire = new Hire {}
+      override val mailer: MailerLike = new MailerLike {
+        override def sendMail(email: Email): Unit = throw new NotImplementedError()
+      }
+      override val paths: PathConfig = new PathConfig {
+        override val cdnUrl = new URL("https://localhost:5051")
+      }
+      override def defaultPictureStream = this.getClass.getResourceAsStream("/com/circusoc/simplesite/pictures/foo.jpg")
+    }
+    config_nopic.db.setup()
+    DBSetup.setup()(config_nopic)
+    intercept[AssertionError] {
+      Picture.defaultPicture(config_nopic)
+    }
   }
 
   def pictureFromTestFile(filename: String): PictureResult = {

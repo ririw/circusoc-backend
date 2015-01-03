@@ -102,13 +102,14 @@ case class PageViewClientEvent(
 ) {
   def pageView = {
     val t = new DateTime()
+    val referrerURL: Option[URL] = referrer.map { s => new URL(s)}
     PageView(
       ClientID(clientID),
       SessionID(sessionID),
       PageID(pageID),
       t.minus(dt),
       new URL(page),
-      referrer.map{s => new URL(s)})
+      referrerURL)
   }
 }
 case class PageActionClientEvent(
@@ -121,11 +122,12 @@ case class PageActionClientEvent(
   section: Option[String]
 ) {
   def pageAction = {
+    val t: DateTime = new DateTime()
     PageAction(
       ClientID(clientID),
       SessionID(sessionID),
       PageID(pageID),
-      new DateTime().minus(dt),
+      t.minus(dt),
       new URL(page),
       ActionSpec(label, section))
   }

@@ -1,6 +1,8 @@
 package com.circusoc.simplesite
 
-import com.circusoc.simplesite.services.{AuthService, HireService, PictureService, TrackingEventService}
+import com.circusoc.simplesite.services._
+import spray.http.HttpHeaders.Cookie
+import spray.http.{HttpHeaders, Rendering, HttpHeader}
 import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
 import org.codemonkey.simplejavamail.{Mailer, Email}
@@ -10,22 +12,17 @@ object Main extends App
             with Core
             with AuthService
             with HireService
+            with PerformerService
             with PictureService
             with TrackingEventService {
   implicit val system = ActorSystem("my-system")
   config.db.setup()
   startServer(interface = "localhost", port = 8080) {
-    path("hello") {
-      get {
-        complete {
-          "Say hello to spray"
-        }
-      }
-    } ~
     authroutes ~
     hireRoutes ~
     pictureRoutes ~
     trackingRoutes ~
+    performerRoutes ~
     path("setup") {
       get {
         complete {
@@ -42,7 +39,7 @@ object Main extends App
  * apps as well as in our tests.
  */
 trait Core {
-  implicit val config = new WithConfig {
+  implicit lazy val config = new WithConfig {
     override val isProduction = true
     override val db: DB = new DB{}
     override val hire: Hire = new Hire {}
@@ -58,4 +55,12 @@ trait Core {
   }
 
   protected implicit def system: ActorSystem
+}
+
+
+class CorsHeader extends HttpHeader {
+  override def name: String = "Access-Control-Allow-Origin"
+  override def value: String = "*"
+  override def lowercaseName: String = "access-control-allow-origin"
+  override def render[R <: Rendering](r: R): r.type = r ~~ s"$name: $value"
 }

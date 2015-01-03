@@ -10,9 +10,9 @@ trait TrackingEventService extends HttpService with SprayJsonSupport {
   this: Core =>
   val trackingRoutes = {
     import com.circusoc.simplesite.tracking.PageViewJsonReaders._
-    post {
       path("tracking" / "pageview") {
-        entity(as[PageViewClientEvent]) {
+        post {
+          entity(as[PageViewClientEvent]) {
           view =>
             complete {
               TrackedEvent.trackEvent(view.pageView)
@@ -21,12 +21,14 @@ trait TrackingEventService extends HttpService with SprayJsonSupport {
         }
       } ~
       path("tracking" / "pageaction") {
-        entity(as[PageActionClientEvent]) {
-          view =>
-            complete {
-              TrackedEvent.trackEvent(view.pageAction)
-              HttpResponse(StatusCodes.Created)
-            }
+        post {
+          entity(as[PageActionClientEvent]) {
+            view =>
+              complete {
+                TrackedEvent.trackEvent(view.pageAction)
+                HttpResponse(StatusCodes.Created)
+              }
+          }
         }
       }
     }

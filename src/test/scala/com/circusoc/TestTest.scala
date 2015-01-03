@@ -1,14 +1,18 @@
 package com.circusoc
 
+import java.net.URL
+
 import akka.actor.ActorSystem
 import com.circusoc.simplesite._
 import com.circusoc.simplesite.performers.PerformerTestGraph
 import com.circusoc.simplesite.pictures.PictureTestGraph
-import com.circusoc.simplesite.services.{AuthService, HireService, PictureService, TrackingEventService}
+import com.circusoc.simplesite.services._
 import com.circusoc.taglink._
 import com.circusoc.testgraph.testgraph._
 import org.codemonkey.simplejavamail.{Email, Mailer}
 import scalikejdbc.{ConnectionPool, NamedDB}
+import spray.http.{Rendering, HttpHeaders}
+import spray.http.HttpHeaders.ModeledCompanion
 import spray.routing.SimpleRoutingApp
 
 /**
@@ -70,10 +74,10 @@ object TestTest extends App {
 
     val performers = List.fill(10)(performersF.randomNode)
     val skills = List.fill(10)(skillF.randomNode)
-    val otherpics = List.fill(40)(picF.randomNode)
+    val otherpics = List.fill(100)(picF.randomNode)
     val profilePics = List.fill(10)(picF.randomNode)
 
-    performers.join.bijectiveJoin(profilePics)(performerPictureJoiner)
+    performers.join.bijectiveJoin(profilePics)(performerProfilePicJoiner)
     performers.join.randomSurjectionJoin(otherpics)(performerPictureJoiner)
     performers.join.randomJoin(skills)
 
@@ -86,10 +90,11 @@ class MainSite extends SimpleRoutingApp
   with Core
   with AuthService
   with HireService
+  with PerformerService
   with PictureService
   with TrackingEventService {
   implicit val system = ActorSystem("my-system")
-  override implicit val config: WithConfig = new WithConfig {
+  override implicit lazy val config: WithConfig = new WithConfig {
     override val isProduction = false
     override val db = new com.circusoc.simplesite.DB{
       override def poolName: Symbol = 'mainsite
@@ -97,6 +102,7 @@ class MainSite extends SimpleRoutingApp
       override def setup() {
         Class.forName("org.h2.Driver")
         ConnectionPool.add(poolName, "jdbc:h2:mem:mainsite;DB_CLOSE_DELAY=-1", "sa", "")
+        // ConnectionPool.add(poolName, "jdbc:h2:~/tmp/test", "sa", "")
       }
     }
     override val hire: Hire = new Hire {}
@@ -108,22 +114,20 @@ class MainSite extends SimpleRoutingApp
       }
       //mailer.sendMail(email)
     }
-    override val paths: PathConfig = new PathConfig {}
+    override val paths: PathConfig = new PathConfig {
+      override val baseUrl: URL = new URL("http://localhost:8080")
+    }
   }
 
   def serve(): Unit = {
     startServer(interface = "localhost", port = 8080) {
-      path("hello") {
-        get {
-          complete {
-            "Say hello to spray"
-          }
-        }
-      } ~
-      authroutes ~
-      hireRoutes ~
-      pictureRoutes ~
-      trackingRoutes
+      respondWithHeader(new CorsHeader()) {
+        performerRoutes ~
+        authroutes ~
+        hireRoutes ~
+        pictureRoutes ~
+        trackingRoutes
+      }
     }
   }
 }
@@ -136,6 +140,7 @@ class TagLink extends TagLinkServer with TagLinkConfig with SimpleRoutingApp {
     override def setup() {
       Class.forName("org.h2.Driver")
       ConnectionPool.add(poolName, "jdbc:h2:mem:taglinktest;DB_CLOSE_DELAY=-1", "sa", "")
+      //ConnectionPool.add(poolName, "jdbc:h2:~/tmp/test", "sa", "")
     }
   }
 

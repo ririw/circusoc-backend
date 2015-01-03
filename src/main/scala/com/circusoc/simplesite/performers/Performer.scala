@@ -3,7 +3,6 @@ package com.circusoc.simplesite.performers
 import spray.json._
 import com.circusoc.simplesite.WithConfig
 import scalikejdbc._
-import org.slf4j.LoggerFactory
 import com.circusoc.simplesite.pictures.{PictureJsonFormatter, Picture}
 
 
@@ -49,7 +48,7 @@ case class Performer(id: Long,
   }
 
   def addPicture(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
-    if (otherPictures.contains(picture)) {
+    if (!otherPictures.contains(picture)) {
       config.db.getDB.autoCommit {implicit session =>
         sql"""INSERT INTO performer_picture VALUES ($id, ${picture.id})""".execute()()
         this.copy(otherPictures=otherPictures + picture)
@@ -72,7 +71,7 @@ case class Performer(id: Long,
 
   def setProfilePic(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     config.db.getDB.autoCommit { implicit session =>
-      sql"""UPDATE performer SET profile_picture=${picture.id} WHERE id=$id""".execute()()
+      sql"""UPDATE performer SET profile_picture_id=${picture.id} WHERE id=$id""".execute()()
     }
     this.copy(profilePicture=picture)
   }
@@ -165,6 +164,12 @@ object Performer {
         throw new Exception("Invalid state, something strange happened")
         // $COVERAGE-ON$
       case Some(p) => p
+    }
+  }
+
+  def getPerformerIds(implicit config: WithConfig): List[Int] = {
+    config.db.getDB.readOnly {implicit session =>
+      sql"""SELECT id FROM performer""".map(_.int(1)).toList()()
     }
   }
 }

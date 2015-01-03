@@ -43,6 +43,6 @@ trait MailerLike {
   def sendMail(email: Email): Unit
 }
 trait PathConfig {
-  val baseUrl: URL = new URL("https://localhost:8080")
-  val cdnUrl: URL = baseUrl
+  def baseUrl: URL = new URL("https://localhost:8080")
+  def cdnUrl: URL = baseUrl
 }

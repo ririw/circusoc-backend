@@ -15,6 +15,7 @@ object Main extends App
             with HireService
             with PerformerService
             with PictureService
+            with CorsService
             with TrackingEventService {
   implicit val system = ActorSystem("my-system")
   config.db.setup()
@@ -24,6 +25,7 @@ object Main extends App
     pictureRoutes ~
     trackingRoutes ~
     performerRoutes ~
+    corsRoutes ~
     path("setup") {
       get {
         complete {
@@ -40,7 +42,6 @@ object Main extends App
  * apps as well as in our tests.
  */
 trait Core {
-
   implicit lazy val config = new WithConfig {
     override val isProduction = true
     override val db: DB = new DB{}
@@ -49,7 +50,7 @@ trait Core {
       val mailer = new Mailer(hire.smtpHost, hire.smtpPort, hire.smtpUser, hire.smtpPass)
       override def sendMail(email: Email): Unit = {
         Thread.sleep(500)
-        println("Sent mail")
+        println("Sent mail: " + email.getText)
       }
       //mailer.sendMail(email)
     }
@@ -60,9 +61,27 @@ trait Core {
 }
 
 
-class CorsHeader extends HttpHeader {
+class CorsOriginHeader extends HttpHeader {
   override def name: String = "Access-Control-Allow-Origin"
   override def value: String = "http://localhost:8000"
   override def lowercaseName: String = "access-control-allow-origin"
+  override def render[R <: Rendering](r: R): r.type = r ~~ s"$name: $value"
+}
+class CorsMethodHeader extends HttpHeader {
+  override def name: String = "Access-Control-Allow-Methods"
+  override def value: String = "GET, POST, PUT"
+  override def lowercaseName: String = "access-control-allow-methods"
+  override def render[R <: Rendering](r: R): r.type = r ~~ s"$name: $value"
+}
+class CorsAgeHeader extends HttpHeader {
+  override def name: String = "Access-Control-Max-Age"
+  override def value: String = "0"
+  override def lowercaseName: String = "access-control-max-age"
+  override def render[R <: Rendering](r: R): r.type = r ~~ s"$name: $value"
+}
+class CorsAcceptHeadersHeader(requested_headers: String) extends HttpHeader {
+  override def name: String = "Access-Control-Allow-Headers"
+  override def value: String = requested_headers
+  override def lowercaseName: String = "access-control-allow-headers"
   override def render[R <: Rendering](r: R): r.type = r ~~ s"$name: $value"
 }

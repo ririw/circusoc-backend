@@ -73,9 +73,9 @@ object TestTest extends App {
     implicit val performerSkillJoiner = PerformerTestGraph.performerSkillJoiner
     implicit val skillPicJoiner = PerformerTestGraph.skillPictureJoin
 
-    val performers = List.fill(50)(performersF.randomNode)
-    val otherpics = List.fill(500)(picF.randomNode)
-    val profilePics = List.fill(50)(picF.randomNode)
+    val performers = List.fill(10)(performersF.randomNode)
+    val otherpics = List.fill(100)(picF.randomNode)
+    val profilePics = List.fill(10)(picF.randomNode)
     val numSkills = 10
     val skillPics = List.fill(numSkills)(picF.randomNode)
     val skills = List.fill(numSkills)(pendingSkillF.randomNode).join.bijectiveJoin(skillPics)
@@ -95,6 +95,7 @@ class MainSite extends SimpleRoutingApp
   with HireService
   with PerformerService
   with PictureService
+  with CorsService
   with TrackingEventService {
   implicit val system = ActorSystem("my-system")
   override implicit lazy val config: WithConfig = new WithConfig {
@@ -113,7 +114,7 @@ class MainSite extends SimpleRoutingApp
       val mailer = new Mailer(hire.smtpHost, hire.smtpPort, hire.smtpUser, hire.smtpPass)
       override def sendMail(email: Email): Unit = {
         Thread.sleep(500)
-        println("Sent mail")
+        println("Sent mail: " + email.getText)
       }
       //mailer.sendMail(email)
     }
@@ -124,7 +125,8 @@ class MainSite extends SimpleRoutingApp
 
   def serve(): Unit = {
     startServer(interface = "localhost", port = 8080) {
-      respondWithHeader(new CorsHeader()) {
+      corsRoutes ~
+      respondWithHeader(new CorsOriginHeader()) {
         performerRoutes ~
         authroutes ~
         hireRoutes ~

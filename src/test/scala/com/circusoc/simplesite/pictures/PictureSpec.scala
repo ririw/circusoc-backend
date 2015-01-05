@@ -54,14 +54,14 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
     getResourceAsStream("/com/circusoc/simplesite/pictures/PicturesDBSpec.xml"))
 
   it should "have different CDN and normal URLs" in {
-    val picture = Picture(1)
+    val picture = PictureReference(1)
     picture.url() should be(new URL("https://localhost:8080/picture/1"))
     picture.cdnUrl() should be(new URL("https://localhost:5051/picture/1"))
   }
 
   it should "work for large IDs" in {
     forAll { id: Long => whenever(id > 0) {
-        val picture = Picture(id)
+        val picture = PictureReference(id)
         picture.url() should be(new URL(s"https://localhost:8080/picture/$id"))
         picture.cdnUrl() should be(new URL(s"https://localhost:5051/picture/$id"))
     }}
@@ -70,7 +70,7 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
   it should "find the right picture from a path" in {
     forAll { id: Long => whenever(id > 0) {
       val url = new URL(s"https://localhost:8080/picture/$id")
-      val picture = Picture.fromURL(url)
+      val picture = PictureReference.fromURL(url)
       picture.url() should be(new URL(s"https://localhost:8080/picture/$id"))
     }}
   }
@@ -79,19 +79,19 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
     forAll { id: Long => whenever(id > 0) {
       intercept[AssertionError] {
         val url = new URL(s"https://localhost:8080/$id")
-        Picture.fromURL(url)
+        PictureReference.fromURL(url)
       }
       intercept[AssertionError] {
         val url = new URL(s"https://localhost:8080/picture/foo/$id")
-        Picture.fromURL(url)
+        PictureReference.fromURL(url)
       }
       intercept[AssertionError] {
         val url = new URL(s"https://localhost:8080/picture/")
-        Picture.fromURL(url)
+        PictureReference.fromURL(url)
       }
       intercept[NumberFormatException] {
         val url = new URL(s"https://localhost:8080/picture/asdasd123")
-        Picture.fromURL(url)
+        PictureReference.fromURL(url)
       }
     }}
   }
@@ -100,19 +100,19 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
     import spray.json._
     implicit val implSkill = new PictureJsonFormatter()
     val pic1 = "\"https://localhost:8080/picture/4\""
-    pic1.parseJson.convertTo[Picture] should be(Picture(4))
+    pic1.parseJson.convertTo[PictureReference] should be(PictureReference(4))
     val pic2 = "1"
     intercept[spray.json.DeserializationException] {
-      pic2.parseJson.convertTo[Picture]
+      pic2.parseJson.convertTo[PictureReference]
     }
     val pic3 = "\"http://reddit.com/4\""
     intercept[AssertionError] {
-      pic3.parseJson.convertTo[Picture]
+      pic3.parseJson.convertTo[PictureReference]
     }
 
     val pic4 = "\"https://localhost:8080/picture/derp\""
     intercept[java.lang.NumberFormatException] {
-      pic4.parseJson.convertTo[Picture]
+      pic4.parseJson.convertTo[PictureReference]
     }
   }
 
@@ -126,8 +126,8 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
     TableDrivenPropertyChecks.forAll(imageFiles) {name: String =>
       val picture = pictureFromTestFile(name)
       val user = Misc.superuser
-      val resultPic = Picture.putPicture(picture, user)
-      val retrievedPic = Picture.getPicture(Picture(resultPic.id))
+      val resultPic = PictureReference.putPicture(picture, user)
+      val retrievedPic = PictureReference.getPicture(PictureReference(resultPic.id))
       retrievedPic should be(Some(pictureFromTestFile(name)))
     }
   }
@@ -142,14 +142,14 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
     TableDrivenPropertyChecks.forAll(imageFiles) {name: String =>
       val picture = pictureFromTestFile(name)
       val user = Misc.superuser
-      val resultPic = Picture.putPicture(picture, user)
-      val retrievedPic = Picture.getPicture(Picture(resultPic.id))
+      val resultPic = PictureReference.putPicture(picture, user)
+      val retrievedPic = PictureReference.getPicture(PictureReference(resultPic.id))
       retrievedPic should be(Some(pictureFromTestFile(name)))
 
-      val result = Picture.deletePicture(Picture(resultPic.id), user)
+      val result = PictureReference.deletePicture(PictureReference(resultPic.id), user)
       result should be(true)
 
-      val unretrievedPic = Picture.getPicture(Picture(resultPic.id))
+      val unretrievedPic = PictureReference.getPicture(PictureReference(resultPic.id))
       unretrievedPic should be(None)
     }
   }
@@ -165,30 +165,30 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
       name: String =>
         val picture = pictureFromTestFile(name)
         val user = Misc.superuser
-        val resultPic = Picture.putPicture(picture, user)
-        val retrievedPic = Picture(resultPic.id).get()
+        val resultPic = PictureReference.putPicture(picture, user)
+        val retrievedPic = PictureReference(resultPic.id).get()
         retrievedPic should be(Some(pictureFromTestFile(name)))
     }
   }
 
   it should "not delete non-existent images" in {
-    val result = Picture.deletePicture(Picture(10000), Misc.superuser)
+    val result = PictureReference.deletePicture(PictureReference(10000), Misc.superuser)
     result should be(false)
   }
 
   it should "show the default picture" in {
-    val defaultpicture = Picture.defaultPicture
-    Picture.getPicture(defaultpicture) should not be None
-    Picture.getPicture(defaultpicture).get should be(
+    val defaultpicture = PictureReference.defaultPicture
+    PictureReference.getPicture(defaultpicture) should not be None
+    PictureReference.getPicture(defaultpicture).get should be(
       pictureFromTestFile("defaultimage.jpg"))
   }
 
   it should "replace the default picture" in {
     val picture = pictureFromTestFile("test.png")
     val user = Misc.superuser
-    val resultPic = Picture.putPicture(picture, user)
-    Picture.setDefaultPicture(resultPic)
-    Picture.getPicture(Picture.defaultPicture).get should be(picture)
+    val resultPic = PictureReference.putPicture(picture, user)
+    PictureReference.setDefaultPicture(resultPic)
+    PictureReference.getPicture(PictureReference.defaultPicture).get should be(picture)
   }
 
   it should "fail to insert non-existent default pictures" in {
@@ -213,7 +213,7 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
     config_nopic.db.setup()
     DBSetup.setup()(config_nopic)
     intercept[AssertionError] {
-      Picture.defaultPicture(config_nopic)
+      PictureReference.defaultPicture(config_nopic)
     }
   }
 

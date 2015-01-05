@@ -3,7 +3,7 @@ package com.circusoc.simplesite.services
 import java.io.ByteArrayInputStream
 
 import com.circusoc.simplesite.Core
-import com.circusoc.simplesite.pictures.{MediaTypeException, Picture, PictureJsonFormatter, PictureResult}
+import com.circusoc.simplesite.pictures.{MediaTypeException, PictureReference, PictureJsonFormatter, PictureResult}
 import com.circusoc.simplesite.users.permissions.ModifyImagesPermission
 import spray.http.{HttpResponse, _}
 import spray.json._
@@ -32,7 +32,7 @@ trait PictureService extends HttpService {
                         val pic = PictureResult(file)
                         pic match {
                           case Success(upload) =>
-                            val uploaded: Picture = Picture.putPicture(upload, user)
+                            val uploaded: PictureReference = PictureReference.putPicture(upload, user)
                             HttpResponse(StatusCodes.Created, uploaded.toJson.compactPrint)
                           case Failure(MediaTypeException(_)) =>
                             HttpResponse(StatusCodes.BadRequest,
@@ -49,19 +49,23 @@ trait PictureService extends HttpService {
     } ~
     path("picture" / LongNumber) {id =>
       get {
-        Picture(id).get().map { picture =>
+        val context = config.stats.pictureTime.time()
+        val res = PictureReference(id).get().map { picture =>
           respondWithMediaType(picture.mediaType) {
             complete {
               HttpResponse(StatusCodes.OK, picture.data)
             }
           }
         }.getOrElse(complete{HttpResponse(StatusCodes.NotFound)})
+        context.stop()
+        context.close()
+        res
       } ~
       delete {
         respondWithMediaType(MediaTypes.`application/json`) {
           authenticate(authenticateUser) { user =>
             authorize(user.hasPermission(ModifyImagesPermission())) {
-                Picture.deletePicture(Picture(id), user) match {
+                PictureReference.deletePicture(PictureReference(id), user) match {
                   case true => complete {
                     HttpResponse(StatusCodes.NoContent)
                   }

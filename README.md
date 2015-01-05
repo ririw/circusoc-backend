@@ -25,6 +25,7 @@ todo
  * member email
  * member signup handler
  * member edit code
+* Use typestates to avoid re-using stale references? 
 
 user stories
 ------------

@@ -1,6 +1,7 @@
 package com.circusoc.simplesite
 
 import com.circusoc.simplesite.services._
+import com.codahale.metrics.MetricRegistry
 import spray.http.HttpHeaders.Cookie
 import spray.http.{HttpHeaders, Rendering, HttpHeader}
 import spray.routing.SimpleRoutingApp
@@ -39,6 +40,7 @@ object Main extends App
  * apps as well as in our tests.
  */
 trait Core {
+
   implicit lazy val config = new WithConfig {
     override val isProduction = true
     override val db: DB = new DB{}
@@ -60,7 +62,7 @@ trait Core {
 
 class CorsHeader extends HttpHeader {
   override def name: String = "Access-Control-Allow-Origin"
-  override def value: String = "*"
+  override def value: String = "http://localhost:8000"
   override def lowercaseName: String = "access-control-allow-origin"
   override def render[R <: Rendering](r: R): r.type = r ~~ s"$name: $value"
 }

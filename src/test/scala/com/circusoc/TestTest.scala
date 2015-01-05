@@ -66,16 +66,19 @@ object TestTest extends App {
     implicit val config = server.config
     com.circusoc.simplesite.DBSetup.setup
     val performersF = PerformerTestGraph.performerNodeFactory
-    val skillF = PerformerTestGraph.skillNodeFactory
+    val pendingSkillF = PerformerTestGraph.pendingSkillNodeFactory
     val picF = PictureTestGraph.pictureFactory
     implicit val performerPictureJoiner = PerformerTestGraph.performerPictureJoiner
     implicit val performerProfilePicJoiner = PerformerTestGraph.performerProfilePicJoiner
     implicit val performerSkillJoiner = PerformerTestGraph.performerSkillJoiner
+    implicit val skillPicJoiner = PerformerTestGraph.skillPictureJoin
 
-    val performers = List.fill(10)(performersF.randomNode)
-    val skills = List.fill(10)(skillF.randomNode)
-    val otherpics = List.fill(100)(picF.randomNode)
-    val profilePics = List.fill(10)(picF.randomNode)
+    val performers = List.fill(50)(performersF.randomNode)
+    val otherpics = List.fill(500)(picF.randomNode)
+    val profilePics = List.fill(50)(picF.randomNode)
+    val numSkills = 10
+    val skillPics = List.fill(numSkills)(picF.randomNode)
+    val skills = List.fill(numSkills)(pendingSkillF.randomNode).join.bijectiveJoin(skillPics)
 
     performers.join.bijectiveJoin(profilePics)(performerProfilePicJoiner)
     performers.join.randomSurjectionJoin(otherpics)(performerPictureJoiner)

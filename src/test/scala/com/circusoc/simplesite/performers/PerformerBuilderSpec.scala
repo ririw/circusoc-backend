@@ -8,7 +8,7 @@ import Arbitrary._
 import Prop._
 import com.circusoc.simplesite.performers.Performer.PerformerBuilder
 import com.circusoc.simplesite.users.User.UserBuilder
-import com.circusoc.simplesite.pictures.Picture
+import com.circusoc.simplesite.pictures.PictureReference
 
 class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
   import SkillChecks._
@@ -18,8 +18,8 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
     forAll {(id: Long,
              name: String,
              skills: Set[Skill],
-             profilePicture: Picture,
-             otherPictures: Set[Picture],
+             profilePicture: PictureReference,
+             otherPictures: Set[PictureReference],
              shown: Boolean
       ) =>
       val updatedWithThings = user.addId(id).addName(name).addProfilePicture(profilePicture).addShown(shown)
@@ -42,8 +42,8 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
     forAll {(id: Long,
              name: String,
              skills: Set[Skill],
-             profilePicture: Picture,
-             otherPictures: Set[Picture],
+             profilePicture: PictureReference,
+             otherPictures: Set[PictureReference],
              shown: Boolean
               ) =>
       val updatedWithThings = user.addId(id).addName(name).addProfilePicture(profilePicture).addShown(shown)
@@ -65,34 +65,34 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
   it should "not build id-less users" in {
     val nonUser = PerformerBuilder().
       addName("asd").
-      addPicture(Picture(1)).
-      addPicture(Picture(2)).
-      addProfilePicture(Picture(3)).
+      addPicture(PictureReference(1)).
+      addPicture(PictureReference(2)).
+      addProfilePicture(PictureReference(3)).
       addShown(true).
-      addSkill(Skill("lol")).
-      addSkill(Skill("foo"))
+      addSkill(Skill(1, "lol", PictureReference(1))).
+      addSkill(Skill(2, "foo", PictureReference(1)))
     nonUser.build should be(None)
   }
   it should "not build name-less users" in {
     val nonUser = PerformerBuilder().
       addId(1).
-      addPicture(Picture(1)).
-      addPicture(Picture(2)).
-      addProfilePicture(Picture(3)).
+      addPicture(PictureReference(1)).
+      addPicture(PictureReference(2)).
+      addProfilePicture(PictureReference(3)).
       addShown(true).
-      addSkill(Skill("lol")).
-      addSkill(Skill("foo"))
+      addSkill(Skill(1, "lol", PictureReference(1))).
+      addSkill(Skill(2, "foo", PictureReference(1)))
     intercept[AssertionError] {nonUser.build()}
   }
   it should "not build profile-less users" in {
     val nonUser = PerformerBuilder().
       addId(1).
       addName("asd").
-      addPicture(Picture(1)).
-      addPicture(Picture(2)).
+      addPicture(PictureReference(1)).
+      addPicture(PictureReference(2)).
       addShown(true).
-      addSkill(Skill("lol")).
-      addSkill(Skill("foo"))
+      addSkill(Skill(1, "lol", PictureReference(1))).
+      addSkill(Skill(2, "foo", PictureReference(1)))
     intercept[AssertionError] {nonUser.build()}
 
   }
@@ -100,26 +100,26 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
     val nonUser = PerformerBuilder().
       addId(1).
       addName("asd").
-      addPicture(Picture(1)).
-      addPicture(Picture(2)).
-      addProfilePicture(Picture(3)).
-      addSkill(Skill("lol")).
-      addSkill(Skill("foo"))
+      addPicture(PictureReference(1)).
+      addPicture(PictureReference(2)).
+      addProfilePicture(PictureReference(3)).
+      addSkill(Skill(1, "lol", PictureReference(1))).
+      addSkill(Skill(2, "foo", PictureReference(1)))
     intercept[AssertionError] {nonUser.build()}
   }
   it should "Not accept different args" in {
     val fullUser = PerformerBuilder().
       addId(1).
       addName("asd").
-      addPicture(Picture(1)).
-      addPicture(Picture(2)).
-      addProfilePicture(Picture(3)).
+      addPicture(PictureReference(1)).
+      addPicture(PictureReference(2)).
+      addProfilePicture(PictureReference(3)).
       addShown(true).
-      addSkill(Skill("lol")).
-      addSkill(Skill("foo"))
+      addSkill(Skill(1, "lol", PictureReference(1))).
+      addSkill(Skill(2, "foo", PictureReference(1)))
     intercept[AssertionError] {fullUser.addId(2)}
     intercept[AssertionError] {fullUser.addName("fefesc")}
-    intercept[AssertionError] {fullUser.addProfilePicture(Picture(4))}
+    intercept[AssertionError] {fullUser.addProfilePicture(PictureReference(4))}
     intercept[AssertionError] {fullUser.addShown(false)}
   }
 
@@ -127,12 +127,18 @@ class PerformerBuilderSpec extends FlatSpecLike with PropertyChecks {
 
 
 object SkillChecks extends Properties("Skill") {
-  lazy val genSkill: Gen[Skill] = arbitrary[String].filter(!_.isEmpty).map(Skill(_))
+  lazy val genSkill: Gen[Skill] = {
+    for {
+      id <- arbitrary[Int]
+      name <- arbitrary[String].filter(!_.isEmpty)
+      picture <- PictureChecks.genPictureReference
+    } yield Skill(scala.math.abs(id), name, picture)
+  }
   implicit lazy val arbSkill: Arbitrary[Skill] = Arbitrary(genSkill)
 }
 
 object PictureChecks extends Properties("Picture") {
-  lazy val genPicture: Gen[Picture] = arbitrary[Long].map{v => labs(v) + 1}.map(Picture(_))
-  implicit lazy val arbPicture: Arbitrary[Picture] = Arbitrary(genPicture)
+  lazy val genPictureReference: Gen[PictureReference] = arbitrary[Long].map{v => labs(v) + 1}.map(PictureReference(_))
+  implicit lazy val arbPicture: Arbitrary[PictureReference] = Arbitrary(genPictureReference)
   def labs(v: Long): Long = if (v < 0) -v else v
 }

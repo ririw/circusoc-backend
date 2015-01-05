@@ -24,6 +24,18 @@ object DBSetup {
         FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE cascade ON UPDATE cascade
         );
       """.execute()()
+      sql"""CREATE TABLE picture (
+        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        mediatype VARCHAR(1024),
+        picture BLOB)
+      """.execute()()
+      sql"""CREATE TABLE skill (
+        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        skill VARCHAR(1024) NOT NULL,
+        picture_id INTEGER,
+        UNIQUE (skill),
+        FOREIGN KEY (picture_id) REFERENCES picture (id)
+      )""".execute()()
       sql"""CREATE TABLE hirerequest (
         id INTEGER PRIMARY KEY AUTO_INCREMENT,
         email VARCHAR(1024) NOT  NULL,
@@ -44,15 +56,11 @@ object DBSetup {
       """.execute()()
       sql"""CREATE TABLE performer_skill (
         performer_id INTEGER NOT NULL ,
-        skill VARCHAR(1024) NOT NULL,
-        UNIQUE (performer_id, skill),
-        FOREIGN KEY (performer_id) REFERENCES performer (id) ON DELETE cascade ON UPDATE cascade
+        skill_id INTEGER NOT NULL,
+        UNIQUE (performer_id, skill_id),
+        FOREIGN KEY (performer_id) REFERENCES performer (id) ON DELETE cascade ON UPDATE cascade,
+        FOREIGN KEY (skill_id) REFERENCES skill (id) ON DELETE cascade ON UPDATE cascade
         )
-      """.execute()()
-      sql"""CREATE TABLE picture (
-        id INTEGER PRIMARY KEY AUTO_INCREMENT,
-        mediatype VARCHAR(1024),
-        picture BLOB)
       """.execute()()
       sql"""CREATE TABLE default_performer_picture (
         picture_id INTEGER NOT NULL,

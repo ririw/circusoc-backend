@@ -1,14 +1,20 @@
+import random
+
 from locust import HttpLocust, TaskSet
 
 
 def login(self):
    pass
 
-def hello(l):
-   l.client.get("/hello")
+def performers(l):
+   l.client.get("/performers")
+
+def performer(l):
+   id = random.randint(1, 10)
+   l.client.get("/performer/%d" % id)
 
 class UserBehavior(TaskSet):
-   tasks = {hello:2}
+   tasks = {performers:1, performer:10}
 
    def on_start(self):
        login(self)

@@ -1,18 +1,19 @@
 package com.circusoc.simplesite.services
 
 import com.circusoc.simplesite.Core
-import com.circusoc.simplesite.performers.Performer
+import com.circusoc.simplesite.performers.Skill.SkillJsonFormat
+import com.circusoc.simplesite.performers.{Skill, Performer, PerformerJsonFormat}
 import spray.http._
 import spray.httpx.SprayJsonSupport
 import spray.routing.HttpService
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import com.circusoc.simplesite.performers.PerformerJsonFormat
 
 trait PerformerService extends HttpService with SprayJsonSupport {
   this: Core with AuthService =>
 
   implicit val performatter = new PerformerJsonFormat()
+  implicit val skillformatter = new SkillJsonFormat()
   val performerRoutes = {
     path("performer" / LongNumber) {id =>
       get {
@@ -27,6 +28,13 @@ trait PerformerService extends HttpService with SprayJsonSupport {
       get {
           complete {
             Performer.getPerformerIds.toJson.compactPrint
+        }
+      }
+    } ~
+    path("skills") {
+      get {
+        complete {
+          Skill.allPerformerSkills().toJson.compactPrint
         }
       }
     }

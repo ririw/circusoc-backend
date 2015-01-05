@@ -53,7 +53,10 @@ object Hire {
       // is equivalent to a situation where there are
       // no overlapping transactions. So we should be safe
       // from problems.
-      //TODO: Unset the lock mode
+      // In theory, there's a case where we put a connection into lock mode 1,
+      // then there's an error, and the connection is returned after the error
+      // is resolved, leaving it in mode 1. Maybe it's worth clearing the pool
+      // every now and then.
       sql"SET LOCK_MODE 1".execute()()
       val emailLoc = sql"""select email, location
                            from hirerequest where id=$id""".
@@ -78,6 +81,7 @@ object Hire {
           logger.info(s"Sent email $id")
           sql"""delete from hirerequest where id=$id""".execute()()
           sql"""delete from hirerequest_skill where hirerequest_id=$id""".execute()()
+          sql"""SET LOCK_MODE 3""".execute()
       }
     }
   }

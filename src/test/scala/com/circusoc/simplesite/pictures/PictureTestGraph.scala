@@ -21,19 +21,19 @@ object PictureTestGraph {
       name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg")
     }
   }
-  def pictureFactory(implicit config: WithConfig): TestNodeFactory[Picture] = {
-    new TestNodeFactory[Picture] {
+  def pictureFactory(implicit config: WithConfig): TestNodeFactory[PictureReference] = {
+    new TestNodeFactory[PictureReference] {
       val pictureLocation = new File(conf.getString("com.circusoc.test.pictures.randomimages_dir"))
       assert(pictureLocation.exists() && pictureLocation.isDirectory, "Could not find images")
       val pictures = Random.shuffle(pictureLocation.listFiles(picFilter).toList)
       val pictureQueue = new mutable.Queue[File]()
       pictureQueue ++= pictures
       val fakeUser = new AuthenticatedUser(-1, "steve", Set(ModifyImagesPermission()))
-      override def randomItem(): Picture = {
+      override def randomItem(): PictureReference = {
         val selectedPic = pictureQueue.dequeue()
         val is = new FileInputStream(selectedPic)
         val pictureResult = PictureResult(is).get
-        Picture.putPicture(pictureResult, fakeUser)
+        PictureReference.putPicture(pictureResult, fakeUser)
       }
     }
   }
@@ -44,7 +44,7 @@ class PictureTestGraphSpec extends FlatSpec {
   it should "create pictures" in {
     val factory = PictureTestGraph.pictureFactory
     val picture = factory.randomItem()
-    assert(Picture.getPicture(picture).isDefined)
+    assert(PictureReference.getPicture(picture).isDefined)
   }
 }
 

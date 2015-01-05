@@ -1,9 +1,10 @@
 package com.circusoc.simplesite.performers
 
+import com.circusoc.simplesite.performers.Skill.SkillJsonFormat
 import spray.json._
 import com.circusoc.simplesite.WithConfig
 import scalikejdbc._
-import com.circusoc.simplesite.pictures.{PictureJsonFormatter, Picture}
+import com.circusoc.simplesite.pictures.{PictureJsonFormatter, PictureReference}
 
 
 /**
@@ -15,14 +16,14 @@ import com.circusoc.simplesite.pictures.{PictureJsonFormatter, Picture}
 case class Performer(id: Long,
                      name: String,
                      skills: Set[Skill],
-                     profilePicture: Picture,
-                     otherPictures: Set[Picture],
+                     profilePicture: PictureReference,
+                     otherPictures: Set[PictureReference],
                      shown: Boolean) {
   def addSkill(skill: Skill, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     if (!skills.contains(skill)) {
       try {
         config.db.getDB.localTx { implicit session =>
-          sql"""INSERT INTO performer_skill VALUES ($id, ${skill.skill})""".execute()()
+          sql"""INSERT INTO performer_skill VALUES ($id, ${skill.id})""".execute()()
           this.copy(skills = skills + skill)
         }
       } catch {
@@ -38,18 +39,19 @@ case class Performer(id: Long,
       this
     }
   }
-  def removeSkill(skill: Skill, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
+  def removeSkill(skill_id: Long, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     config.db.getDB.autoCommit {implicit session =>
-      if (skills.contains(skill)) {
-        sql"""DELETE FROM performer_skill WHERE performer_id=$id and skill=${skill.skill}""".execute()()
-        this.copy(skills = skills - skill)
+      if (skills.exists(_.id == skill_id)) {
+        println("REMOVIE")
+        sql"""DELETE FROM performer_skill WHERE performer_id=$id and skill_id=$skill_id""".execute()()
+        this.copy(skills = skills.filter(_.id != skill_id))
       } else {
         this
       }
     }
   }
 
-  def addPicture(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
+  def addPicture(picture: PictureReference, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     if (!otherPictures.contains(picture)) {
       config.db.getDB.autoCommit {implicit session =>
         sql"""INSERT INTO performer_picture VALUES ($id, ${picture.id})""".execute()()
@@ -60,10 +62,10 @@ case class Performer(id: Long,
     }
   }
 
-  def deletePicture(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
+  def deletePicture(picture: PictureReference, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     if (otherPictures.contains(picture)) {
       config.db.getDB.autoCommit { implicit session =>
-        sql"""DELETE FROM performer_pictures WHERE performer_id=$id AND picture_id=${picture.id}""".execute()()
+        sql"""DELETE FROM performer_picture WHERE performer_id=$id AND picture_id=${picture.id}""".execute()()
         this.copy(otherPictures = otherPictures - picture)
       }
     } else {
@@ -71,7 +73,7 @@ case class Performer(id: Long,
     }
   }
 
-  def setProfilePic(picture: Picture, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
+  def setProfilePic(picture: PictureReference, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     config.db.getDB.autoCommit { implicit session =>
       sql"""UPDATE performer SET profile_picture_id=${picture.id} WHERE id=$id""".execute()()
     }
@@ -84,8 +86,8 @@ object Performer {
     id: Option[Long] = None,
     name: Option[String] = None,
     skills: Set[Skill] = Set(),
-    profilePicture: Option[Picture] = None,
-    otherPictures: Set[Picture] = Set(),
+    profilePicture: Option[PictureReference] = None,
+    otherPictures: Set[PictureReference] = Set(),
     shown: Option[Boolean] = None
   ) {
     def addId(_id: Long) = {
@@ -97,8 +99,8 @@ object Performer {
       this.copy(name=Some(_name))
     }
     def addSkill(skill: Skill) = this.copy(skills=skills + skill)
-    def addPicture(picture: Picture) = this.copy(otherPictures=otherPictures + picture)
-    def addProfilePicture(_profilePicture: Picture) = {
+    def addPicture(picture: PictureReference) = this.copy(otherPictures=otherPictures + picture)
+    def addProfilePicture(_profilePicture: PictureReference) = {
       assert(profilePicture.isEmpty || profilePicture.get == _profilePicture)
       this.copy(profilePicture=Some(_profilePicture))
     }
@@ -123,17 +125,19 @@ object Performer {
     val name = rs.string("name")
     val profile_picture = rs.long("profile_picture_id")
     val shown = rs.boolean("shown")
-    pb.addId(id).addName(name).addProfilePicture(Picture(profile_picture)).addShown(shown)
+    pb.addId(id).addName(name).addProfilePicture(PictureReference(profile_picture)).addShown(shown)
   }
   
   def buildFromSkillTable(pb: PerformerBuilder, rs: WrappedResultSet): PerformerBuilder = {
+    val id = rs.long("id")
     val skill = rs.string("skill")
-    pb.addSkill(Skill(skill))
+    val picture_id = rs.long("picture_id")
+    pb.addSkill(Skill(id, skill, PictureReference(picture_id)))
   }
 
   def buildFromPictureTable(pb: PerformerBuilder, rs: WrappedResultSet): PerformerBuilder = {
     val picture = rs.long("picture_id")
-    pb.addPicture(Picture(picture))
+    pb.addPicture(PictureReference(picture))
   }
   
   def getPerformerByID(id: Long)(implicit config: WithConfig): Option[Performer] = {
@@ -143,7 +147,10 @@ object Performer {
         WHERE id=$id
       """.foldLeft(PerformerBuilder())(buildFromPerformerTable)
       val skillTableCollection = sql"""
-        SELECT skill FROM performer_skill WHERE performer_id=$id
+        SELECT id, skill, picture_id FROM
+          performer_skill
+          JOIN skill ON performer_skill.skill_id=skill.id
+        WHERE performer_id=$id
       """.foldLeft(perfTableCollection)(buildFromSkillTable)
       val pictureTableCollection = sql"""
         SELECT picture_id FROM performer_picture WHERE performer_id=$id
@@ -155,7 +162,7 @@ object Performer {
 
   def newPerformer(name: String, shown: Boolean, mayUpdateUserProof: MayAlterPerformersProof)
                   (implicit config: WithConfig): Performer = {
-    val picture = Picture.defaultPicture.id
+    val picture = PictureReference.defaultPicture.id
     val performerid = config.db.getDB.autoCommit {implicit session =>
       sql"""INSERT INTO performer (name,  profile_picture_id, shown)
                            VALUES ($name, $picture,          $shown)""".updateAndReturnGeneratedKey()()
@@ -169,10 +176,10 @@ object Performer {
     }
   }
 
-  def getPerformerIds(implicit config: WithConfig): List[Int] = {
+  def getPerformerIds(implicit config: WithConfig): Set[Int] = {
     config.db.getDB.readOnly {implicit session =>
       sql"""SELECT id FROM performer""".map(_.int(1)).toList()()
-    }
+    }.toSet
   }
 }
 
@@ -182,7 +189,50 @@ case class DebugMayAlterPerformerProof(implicit config: WithConfig) extends MayA
   assert(!config.isProduction)
 }
 
-case class Skill(skill: String) extends AnyVal
+case class Skill(id: Long, skill: String, picture: PictureReference)
+
+object Skill {
+  def getSkillByName(name: String)(implicit config: WithConfig): Option[Skill] = {
+    config.db.getDB.readOnly{implicit session =>
+      sql"""SELECT id, skill, picture_id FROM skill WHERE skill=$name""".map{r =>
+        val id = r.long(1)
+        val name = r.string(2)
+        val picture_id = r.long(3)
+        Skill(id, name, PictureReference(picture_id))
+      }.first()()
+    }
+  }
+  
+  def createOrGetSkill(name: String, pictureReference: PictureReference)(implicit config: WithConfig): Skill = {
+    val id = config.db.getDB.autoCommit {implicit session =>
+      sql"""INSERT INTO skill (skill, picture_id) VALUES ($name, ${pictureReference.id})""".updateAndReturnGeneratedKey()()
+    }
+    Skill(id, name, pictureReference)
+  }
+
+  def allPerformerSkills()(implicit config: WithConfig): List[Skill] = {
+    config.db.getDB.readOnly { implicit session =>
+      // Includes a join to ensure we're only gettings skills that a performer has.
+      sql"""SELECT skill.id, skill, picture_id
+           FROM skill JOIN performer_skill ON skill.id=performer_skill.skill_id""".map { r =>
+        val id = r.long(1)
+        val name = r.string(2)
+        val picture_id = r.long(3)
+        Skill(id, name, PictureReference(picture_id))
+      }.list()()
+    }
+  }
+
+  class SkillJsonFormat(implicit config: WithConfig) extends RootJsonFormat[Skill] with DefaultJsonProtocol {
+    implicit val pictureJsonFormatter = new PictureJsonFormatter()
+
+    def write(skill: Skill) = JsObject("name" -> JsString(skill.skill), "picture" -> skill.picture.toJson)
+    def read(value: JsValue) = value match {
+      case JsString(v) => Skill.getSkillByName(v)(config).getOrElse(deserializationError("Unkown skill"))
+      case _ => deserializationError("Skill expected")
+    }
+  }
+}
 
 
 /**
@@ -193,8 +243,8 @@ case class Skill(skill: String) extends AnyVal
 class PerformerJsonFormat(implicit config: WithConfig)
   extends RootJsonFormat[Performer]
   with DefaultJsonProtocol {
-  import Skill.SkillJsonFormat._
 
+  implicit val skillJsonFormatter = new SkillJsonFormat()
   implicit val pictureJsonFormatter = new PictureJsonFormatter()
   def write(performer: Performer) =
     JsObject(
@@ -225,8 +275,8 @@ class PerformerJsonFormat(implicit config: WithConfig)
                    JsArray(_otherPics),
                    JsBoolean(shown))) =>
           val skills = _skills.map(_.convertTo[Skill]).toSet
-          val performerPic = _profilePic.convertTo[Picture]
-          val otherPics = _otherPics.map(_.convertTo[Picture]).toSet
+          val performerPic = _profilePic.convertTo[PictureReference]
+          val otherPics = _otherPics.map(_.convertTo[PictureReference]).toSet
           Performer(id.toLong, name, skills, performerPic, otherPics, shown)
         case _ => deserializationError("Perfomer expected")
       }
@@ -234,12 +284,3 @@ class PerformerJsonFormat(implicit config: WithConfig)
   }
 }
 
-object Skill extends DefaultJsonProtocol {
-  implicit object SkillJsonFormat extends RootJsonFormat[Skill] {
-    def write(skill: Skill) = JsString(skill.skill)
-    def read(value: JsValue) = value match {
-      case JsString(v) => Skill(v)
-      case _ => deserializationError("Skill expected")
-    }
-  }
-}

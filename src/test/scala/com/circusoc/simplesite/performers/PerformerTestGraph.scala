@@ -1,7 +1,7 @@
 package com.circusoc.simplesite.performers
 
 import com.circusoc.simplesite.WithConfig
-import com.circusoc.simplesite.pictures.Picture
+import com.circusoc.simplesite.pictures.PictureReference
 import com.circusoc.testgraph.{NodeJoiner, TestNodeFactory}
 import org.scalacheck.Gen
 import org.slf4j.LoggerFactory
@@ -21,12 +21,21 @@ object PerformerTestGraph {
     }
   }
 
-  def skillNodeFactory(implicit config: WithConfig): TestNodeFactory[Skill] = {
-    new TestNodeFactory[Skill] {
-      override def randomItem(): Skill = {
+  def pendingSkillNodeFactory(implicit config: WithConfig): TestNodeFactory[PendingSkill] = {
+    new TestNodeFactory[PendingSkill] {
+      override def randomItem(): PendingSkill = {
         val skill: String = Gen.alphaStr.sample.get.take(10)
-        logger.info(s"Creating skill: $skill")
-        Skill(skill)
+        logger.info(s"Creating pending skill: $skill")
+        PendingSkill(skill)
+      }
+    }
+  }
+
+  def skillPictureJoin(implicit config: WithConfig): NodeJoiner[PendingSkill, PictureReference, Skill] = {
+    new NodeJoiner[PendingSkill, PictureReference, Skill] {
+      override def _join(from: PendingSkill, to: PictureReference): Skill = {
+        logger.info(s"Creating skill ${from.name} with picture ${to.id}")
+        Skill.createOrGetSkill(from.name, to)
       }
     }
   }
@@ -40,21 +49,23 @@ object PerformerTestGraph {
     }
   }
 
-  def performerPictureJoiner(implicit config: WithConfig): NodeJoiner[Performer, Picture, Performer] = {
-    new NodeJoiner[Performer, Picture, Performer] {
-      override def _join(from: Performer, to: Picture): Performer = {
+  def performerPictureJoiner(implicit config: WithConfig): NodeJoiner[Performer, PictureReference, Performer] = {
+    new NodeJoiner[Performer, PictureReference, Performer] {
+      override def _join(from: Performer, to: PictureReference): Performer = {
         logger.info(s"Giving performer ${from.name} picture ${to.id}")
         from.addPicture(to, new DebugMayAlterPerformerProof())
       }
     }
   }
 
-  def performerProfilePicJoiner(implicit config: WithConfig): NodeJoiner[Performer, Picture, Performer] = {
-    new NodeJoiner[Performer, Picture, Performer] {
-      override def _join(from: Performer, to: Picture): Performer = {
+  def performerProfilePicJoiner(implicit config: WithConfig): NodeJoiner[Performer, PictureReference, Performer] = {
+    new NodeJoiner[Performer, PictureReference, Performer] {
+      override def _join(from: Performer, to: PictureReference): Performer = {
         logger.info(s"Setting performer ${from.name} with profile picture ${to.id}")
         from.setProfilePic(to, new DebugMayAlterPerformerProof())
       }
     }
   }
 }
+
+case class PendingSkill(name: String)

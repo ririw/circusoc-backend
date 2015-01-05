@@ -1,7 +1,9 @@
 package com.circusoc.simplesite
 
 import java.net.URL
+import java.util.concurrent.TimeUnit
 
+import com.codahale.metrics
 import org.codemonkey.simplejavamail.Email
 import scalikejdbc._
 
@@ -12,6 +14,19 @@ trait WithConfig {
   val paths: PathConfig
   val isProduction = false
   def defaultPictureStream = this.getClass.getResourceAsStream("/com/circusoc/simplesite/pictures/defaultimage.jpg")
+  def stats: Stats = new Stats{}
+}
+class Stats {
+  def registry = new metrics.MetricRegistry()
+  def pictureTime = registry.timer("Picture retrieval")
+  def run(): Unit = {
+    val reporter = metrics.ConsoleReporter.forRegistry(registry)
+      .convertRatesTo(TimeUnit.SECONDS)
+      .convertDurationsTo(TimeUnit.MILLISECONDS)
+      .build()
+    reporter.report()
+    reporter.start(5, TimeUnit.SECONDS)
+  }
 }
 
 trait DB {

@@ -17,7 +17,7 @@ trait PictureService extends HttpService {
   implicit val picFormatter = new PictureJsonFormatter()
   val pictureRoutes = {
     path("picture") {
-        post {
+      post {
         authenticate(authenticateUser) { user =>
           authorize(user.hasPermission(ModifyImagesPermission())) {
             respondWithHeader(HttpHeaders.`Content-Type`(MediaTypes.`application/json`)) {

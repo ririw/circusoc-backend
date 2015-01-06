@@ -59,6 +59,7 @@ trait MailerLike {
   def sendMail(email: Email): Unit
 }
 trait PathConfig {
-  def baseUrl: URL = new URL("https://localhost:8080")
-  def cdnUrl: URL = baseUrl
+  def baseUrl: URL = new URL("http://localhost.com:8080")
+  def cookieUrl: String = "localhost.com"
+  def cdnUrl: URL = new URL("http://localhost.com:8000")
 }

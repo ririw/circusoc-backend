@@ -23,9 +23,13 @@ object TestNodeFactory {
 }
 
 trait NodeJoiner[FromType, ToType, ResultType] {
-  def _join(from: FromType, to: ToType): ResultType
+  def join(from: FromType, to: ToType): ResultType
   def join(from: TestNode[FromType], to: TestNode[ToType]): TestNodeJoin[FromType, ToType, ResultType] =
-    new TestNodeJoin(from, to, _join(from.node, to.node))
+    new TestNodeJoin(from, to, join(from.node, to.node))
+  def join(from: TestNode[FromType], to: ToType): TestNodeJoin[FromType, ToType, ResultType] = {
+    val toNode = new TestNode(to)
+    new TestNodeJoin(from, toNode, join(from.node, to))
+  }
 }
 
 class TestNode[+NodeType](val node: NodeType, val marker: Option[Symbol] = None)

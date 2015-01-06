@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 
 
 class TagLocationLinker extends NodeJoiner[TaglinkLocation, TaglinkTag, TaglinkTagLocationPair] {
-  override def _join(from: TaglinkLocation, to: TaglinkTag): TaglinkTagLocationPair = {
+  override def join(from: TaglinkLocation, to: TaglinkTag): TaglinkTagLocationPair = {
     TaglinkTagLocationPair(from, to)
   }
 }
@@ -48,7 +48,7 @@ case class TaglinkTagLocationPair(location: TaglinkLocation, tag: TaglinkTag)
 class TestContentLinker(server: TagLinkServer with TagLinkConfig)
   extends NodeJoiner[TaglinkTagLocationPair, TaglinkContent, Boolean] {
   val logger = LoggerFactory.getLogger(this.getClass.getName)
-  override def _join(from: TaglinkTagLocationPair, to: TaglinkContent): Boolean = {
+  override def join(from: TaglinkTagLocationPair, to: TaglinkContent): Boolean = {
     logger.info(s"Linking location ${from.location.name}/${from.tag.name.name} and ${to.content}")
     server.putItem(from.location.name.name, from.tag.name.name, to.content)
   }

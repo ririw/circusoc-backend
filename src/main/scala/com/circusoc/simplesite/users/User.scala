@@ -1,6 +1,7 @@
 package com.circusoc.simplesite.users
 
 import com.circusoc.simplesite.WithConfig
+import com.circusoc.simplesite.users.User.MayChangePassProof
 import com.circusoc.simplesite.users.permissions.Permission
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -16,16 +17,16 @@ class User(val id: Long, val username: String, val userPermissions: Set[permissi
   extends Equals {
   def hasPermission(permission: permissions.Permission): Boolean = userPermissions.contains(permission)
   def addPermission(permission: permissions.Permission,
-                    changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
-    User.addPermission(this, permission, User.MayAlterUsersProof.hasChangePermisProof(changingUser))
+                    alterProof: User.MayAlterUsersProof)(implicit config: WithConfig): User = {
+    User.addPermission(this, permission, alterProof)
   }
   def removePermission(permission: permissions.Permission,
-                       changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
-    User.removePermission(this, permission, User.MayAlterUsersProof.hasChangePermisProof(changingUser))
+                       alterProof: User.MayAlterUsersProof)(implicit config: WithConfig): User = {
+    User.removePermission(this, permission, alterProof)
   }
   def changePassword(newPassword: Password,
-                     changingUser: AuthenticatedUser)(implicit config: WithConfig): User = {
-    User.changePassword(this, newPassword, User.MayChangePassProof.hasChangePerm(changingUser))
+                     alterProof: User.MayChangePassProof)(implicit config: WithConfig): User = {
+    User.changePassword(this, newPassword, alterProof)
   }
 
   override def canEqual(that: Any): Boolean = that.isInstanceOf[User]
@@ -51,9 +52,9 @@ class  AuthenticatedUser(
   _username: String,
   _permissions: Set[permissions.Permission])
   extends User(_id, _username, _permissions) with Equals {
-  override def changePassword(newPassword: Password, changingUser: AuthenticatedUser)
+  override def changePassword(newPassword: Password, proof: MayChangePassProof)
                              (implicit config: WithConfig): User = {
-    User.changePassword(this, newPassword, User.MayChangePassProof.isChangingUser(this, changingUser))
+    User.changePassword(this, newPassword, proof)
   }
 
   override def canEqual(that: Any): Boolean = that.isInstanceOf[AuthenticatedUser]
@@ -178,11 +179,11 @@ object User {
       assert(changingUser.hasPermission(permissions.CanAdministerUsersPermission()))
       new MayChangePassProof {}
     }
-    def isChangingUser(changingUser: AuthenticatedUser, changedUser: User) = {
+    def isChangingUser(changingUser: AuthenticatedUser, changedUser: User): MayChangePassProof = {
       assert(changingUser.id == changedUser.id)
       new MayChangePassProof {}
     }
-    def isTest(implicit config: WithConfig) = {
+    def isTest(implicit config: WithConfig): MayChangePassProof = {
       assert(!config.isProduction)
       new MayChangePassProof {}
     }

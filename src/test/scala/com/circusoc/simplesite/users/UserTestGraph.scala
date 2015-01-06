@@ -15,7 +15,7 @@ object UserTestGraph {
 
   def addPermissionJoiner(implicit config: WithConfig): NodeJoiner[User, permissions.Permission, User] = {
     new NodeJoiner[User, permissions.Permission, User] {
-      override def _join(from: User, to: permissions.Permission): User =
+      override def join(from: User, to: permissions.Permission): User =
         User.addPermission(from, to, new User.DebugMayAlterUsersProof())
     }
   }

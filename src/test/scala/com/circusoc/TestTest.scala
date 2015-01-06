@@ -7,6 +7,8 @@ import com.circusoc.simplesite._
 import com.circusoc.simplesite.performers.PerformerTestGraph
 import com.circusoc.simplesite.pictures.PictureTestGraph
 import com.circusoc.simplesite.services._
+import com.circusoc.simplesite.users.UserTestGraph
+import com.circusoc.simplesite.users.permissions
 import com.circusoc.taglink._
 import com.circusoc.testgraph.testgraph._
 import org.codemonkey.simplejavamail.{Email, Mailer}
@@ -28,7 +30,7 @@ object TestTest extends App {
   }
   command match {
     case s if s.startsWith("taglink:") => taglink(s.drop("taglink:".length))
-    case "performers" => performers()
+    case "full" => fullSite()
     case s => default(s)
   }
 
@@ -60,26 +62,30 @@ object TestTest extends App {
     server.serve()
   }
 
-  def performers(): Unit = {
+  def fullSite(): Unit = {
     val server = new MainSite()
     server.config.db.setup()
     implicit val config = server.config
     com.circusoc.simplesite.DBSetup.setup
-    val performersF = PerformerTestGraph.performerNodeFactory
+    val performersF   = PerformerTestGraph.performerNodeFactory
     val pendingSkillF = PerformerTestGraph.pendingSkillNodeFactory
-    val picF = PictureTestGraph.pictureFactory
-    implicit val performerPictureJoiner = PerformerTestGraph.performerPictureJoiner
+    val picF          = PictureTestGraph.pictureFactory
+    val userF         = PerformerTestGraph.adminNodeFactory
+    implicit val performerPictureJoiner    = PerformerTestGraph.performerPictureJoiner
     implicit val performerProfilePicJoiner = PerformerTestGraph.performerProfilePicJoiner
-    implicit val performerSkillJoiner = PerformerTestGraph.performerSkillJoiner
-    implicit val skillPicJoiner = PerformerTestGraph.skillPictureJoin
+    implicit val performerSkillJoiner      = PerformerTestGraph.performerSkillJoiner
+    implicit val skillPicJoiner            = PerformerTestGraph.skillPictureJoin
+    implicit val userPermJoiner            = PerformerTestGraph.userPermissionJoiner
 
-    val performers = List.fill(10)(performersF.randomNode)
-    val otherpics = List.fill(100)(picF.randomNode)
-    val profilePics = List.fill(10)(picF.randomNode)
     val numSkills = 10
-    val skillPics = List.fill(numSkills)(picF.randomNode)
-    val skills = List.fill(numSkills)(pendingSkillF.randomNode).join.bijectiveJoin(skillPics)
+    val users       = List.fill(3)  (userF.randomNode())
+    val performers  = List.fill(10) (performersF.randomNode)
+    val otherpics   = List.fill(100)(picF.randomNode)
+    val profilePics = List.fill(10) (picF.randomNode)
+    val skillPics   = List.fill(numSkills)(picF.randomNode)
+    val skills      = List.fill(numSkills)(pendingSkillF.randomNode).join.bijectiveJoin(skillPics)
 
+    users.map(userPermJoiner.join(_, permissions.CanUpdateMembers()))
     performers.join.bijectiveJoin(profilePics)(performerProfilePicJoiner)
     performers.join.randomSurjectionJoin(otherpics)(performerPictureJoiner)
     performers.join.randomJoin(skills)
@@ -93,6 +99,7 @@ class MainSite extends SimpleRoutingApp
   with Core
   with AuthService
   with HireService
+  with MemberService
   with PerformerService
   with PictureService
   with CorsService
@@ -126,9 +133,10 @@ class MainSite extends SimpleRoutingApp
   def serve(): Unit = {
     startServer(interface = "localhost", port = 8080) {
       corsRoutes ~
-      respondWithHeader(new CorsOriginHeader()) {
+      respondWithHeader(new CorsOriginHeader(config.paths.cdnUrl)) {
         performerRoutes ~
         authroutes ~
+        memberroutes ~
         hireRoutes ~
         pictureRoutes ~
         trackingRoutes

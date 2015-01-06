@@ -1,5 +1,7 @@
 package com.circusoc.simplesite
 
+import java.net.URL
+
 import com.circusoc.simplesite.services._
 import com.codahale.metrics.MetricRegistry
 import spray.http.HttpHeaders.Cookie
@@ -15,6 +17,7 @@ object Main extends App
             with HireService
             with PerformerService
             with PictureService
+            with MemberService
             with CorsService
             with TrackingEventService {
   implicit val system = ActorSystem("my-system")
@@ -24,6 +27,7 @@ object Main extends App
     hireRoutes ~
     pictureRoutes ~
     trackingRoutes ~
+    memberroutes ~
     performerRoutes ~
     corsRoutes ~
     path("setup") {
@@ -61,9 +65,9 @@ trait Core {
 }
 
 
-class CorsOriginHeader extends HttpHeader {
+class CorsOriginHeader(url: URL) extends HttpHeader {
   override def name: String = "Access-Control-Allow-Origin"
-  override def value: String = "http://localhost:8000"
+  override def value: String = url.toExternalForm
   override def lowercaseName: String = "access-control-allow-origin"
   override def render[R <: Rendering](r: R): r.type = r ~~ s"$name: $value"
 }

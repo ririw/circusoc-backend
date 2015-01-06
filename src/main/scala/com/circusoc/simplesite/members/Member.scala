@@ -2,8 +2,10 @@ package com.circusoc.simplesite.members
 
 import com.circusoc.simplesite.WithConfig
 import com.circusoc.simplesite.users.AuthenticatedUser
+import com.circusoc.simplesite.util.ApiFormats
 import org.joda.time.DateTime
 import scalikejdbc._
+import spray.json._
 
 import scala.util.{Failure, Success, Try}
 
@@ -17,6 +19,39 @@ case class Member(
   lastPayment: DateTime)
 
 case class StudentRecord(studentNumber: String, isArc: Boolean)
+
+/*
+// $COVERAGE-OFF$
+object StudentRecordJsonSupport
+  extends RootJsonFormat[StudentRecord]
+  with DefaultJsonProtocol {
+  override implicit def read(json: JsValue): StudentRecord = jsonFormat2(StudentRecord).read(json)
+  override implicit def write(obj: StudentRecord): JsValue = jsonFormat2(StudentRecord).write(obj)
+}
+// $COVERAGE-ON$
+*/
+object StudentRecordJsonSupport extends DefaultJsonProtocol {
+    implicit val studentRecordFormat = jsonFormat2(StudentRecord)
+}
+
+object MemberJsonProtocol {
+  import DefaultJsonProtocol._
+  implicit object MemberJsonSupport extends RootJsonFormat[Member] {
+    import StudentRecordJsonSupport._
+    import ApiFormats._
+
+    override def read(json: JsValue): Member = ???
+    override def write(obj: Member): JsValue = JsObject(
+      "id" -> JsNumber(obj.id),
+      "name" -> JsString(obj.name),
+      "email" -> obj.email.map(JsString(_)).getOrElse(JsNull),
+      "student_record" -> obj.studentRecord.map(_.toJson).getOrElse(JsNull),
+      "subscribed" -> JsBoolean(obj.subscribed),
+      "last_waiver" -> obj.lastWaiver.toJson,
+      "last_payment" -> obj.lastPayment.toJson
+    )
+  }
+}
 
 object Member {
   def getMember(id: Long)(implicit config: WithConfig, session: DBSession): Option[Member] =
@@ -109,7 +144,6 @@ object Member {
       Member(id, name, email, student_record, subscribed, last_waiver, last_payment)
     }.headOption().apply()
   }
-  // TODO: collisions and errors, ie, the RHS of the either.
   def newMember(name: String,
                 email: Option[String],
                 studentRecord: Option[StudentRecord],
@@ -129,7 +163,6 @@ object Member {
       sql"""INSERT INTO member_waiver VALUES ($id, $now)""".execute()()
       Left(Member(id, name, email, studentRecord, subscribed, now, now))
     }
-
     result match {
       case Success(l) => l
       case Failure(e: org.h2.jdbc.JdbcSQLException) => Right(mapMessage(e))

@@ -1,7 +1,10 @@
 package com.circusoc.simplesite.performers
 
 import com.circusoc.simplesite.WithConfig
+import com.circusoc.simplesite.members.Member
 import com.circusoc.simplesite.pictures.PictureReference
+import com.circusoc.simplesite.users.permissions.Permission
+import com.circusoc.simplesite.users.{Password, User}
 import com.circusoc.testgraph.{NodeJoiner, TestNodeFactory}
 import org.scalacheck.Gen
 import org.slf4j.LoggerFactory
@@ -31,9 +34,31 @@ object PerformerTestGraph {
     }
   }
 
+  def adminNodeFactory(implicit conifg: WithConfig): TestNodeFactory[User] = {
+    new TestNodeFactory[User] {
+      var usernamecounter = 1
+      override def randomItem(): User = {
+        val username = usernamecounter.toString
+        usernamecounter += 1
+        val password = "password"
+        logger.info(s"Creating user: $username with password $password")
+        User.addUser(username, Password(password), new User.DebugMayAlterUsersProof())
+      }
+    }
+  }
+
+  def userPermissionJoiner(implicit config: WithConfig): NodeJoiner[User, Permission, User] = {
+    new NodeJoiner[User, Permission, User] {
+      override def join(from: User, to: Permission): User = {
+        logger.info(s"Awarding user permission: ${to.name}")
+        from.addPermission(to, new User.DebugMayAlterUsersProof())
+      }
+    }
+  }
+
   def skillPictureJoin(implicit config: WithConfig): NodeJoiner[PendingSkill, PictureReference, Skill] = {
     new NodeJoiner[PendingSkill, PictureReference, Skill] {
-      override def _join(from: PendingSkill, to: PictureReference): Skill = {
+      override def join(from: PendingSkill, to: PictureReference): Skill = {
         logger.info(s"Creating skill ${from.name} with picture ${to.id}")
         Skill.createOrGetSkill(from.name, to)
       }
@@ -42,7 +67,7 @@ object PerformerTestGraph {
 
   def performerSkillJoiner(implicit config: WithConfig): NodeJoiner[Performer, Skill, Performer] = {
     new NodeJoiner[Performer, Skill, Performer] {
-      override def _join(from: Performer, to: Skill): Performer = {
+      override def join(from: Performer, to: Skill): Performer = {
         logger.info(s"Awarding performer ${from.name} with skill ${to.skill}")
         from.addSkill(to, new DebugMayAlterPerformerProof())
       }
@@ -51,7 +76,7 @@ object PerformerTestGraph {
 
   def performerPictureJoiner(implicit config: WithConfig): NodeJoiner[Performer, PictureReference, Performer] = {
     new NodeJoiner[Performer, PictureReference, Performer] {
-      override def _join(from: Performer, to: PictureReference): Performer = {
+      override def join(from: Performer, to: PictureReference): Performer = {
         logger.info(s"Giving performer ${from.name} picture ${to.id}")
         from.addPicture(to, new DebugMayAlterPerformerProof())
       }
@@ -60,7 +85,7 @@ object PerformerTestGraph {
 
   def performerProfilePicJoiner(implicit config: WithConfig): NodeJoiner[Performer, PictureReference, Performer] = {
     new NodeJoiner[Performer, PictureReference, Performer] {
-      override def _join(from: Performer, to: PictureReference): Performer = {
+      override def join(from: Performer, to: PictureReference): Performer = {
         logger.info(s"Setting performer ${from.name} with profile picture ${to.id}")
         from.setProfilePic(to, new DebugMayAlterPerformerProof())
       }

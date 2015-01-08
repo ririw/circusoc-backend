@@ -58,6 +58,8 @@ trait Hire {
 trait MailerLike {
   def sendMail(email: Email): Unit
 }
+
+// TODO: Cookies do not yet work.
 trait PathConfig {
   def baseUrl: URL = new URL("http://localhost.com:8080")
   def cookieUrl: String = "localhost.com"

@@ -9,7 +9,7 @@ trait CorsService extends HttpService {
   val corsRoutes = {
     options {
       headerValueByName("Access-Control-Request-Headers") {headers =>
-        respondWithHeaders(new CorsOriginHeader(config.paths.cdnUrl), new CorsMethodHeader(), new CorsAcceptHeadersHeader(headers)) {
+        respondWithHeaders(new CorsOriginHeader(config.paths.cdnUrl), new CorsMethodHeader(), new CorsAcceptHeadersHeader(headers + ", cookie")) {
           complete {
             HttpResponse()
           }

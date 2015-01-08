@@ -1,5 +1,6 @@
 package com.circusoc.simplesite.performers
 
+import java.net.URL
 import java.sql.{Connection, DriverManager}
 
 import com.circusoc.simplesite._
@@ -32,7 +33,11 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
     override val mailer: MailerLike = new MailerLike {
       override def sendMail(email: Email): Unit = throw new NotImplementedError()
     }
-    override val paths: PathConfig = new PathConfig {}
+    override val paths: PathConfig = new PathConfig {
+      override def baseUrl: URL = new URL("http://localhost:8080")
+      override def cookieUrl: String = "localhost"
+      override def cdnUrl: URL = new URL("http://localhost:8000")
+    }
   }
 
   def getJDBC: Connection = {
@@ -224,10 +229,10 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       "id" -> JsNumber(1),
       "name" -> JsString("steve"),
       "skills" -> JsArray(
-        JsObject("name" -> JsString("fire"), "picture" -> JsString("https://localhost:8080/picture/1")),
-        JsObject("name" -> JsString("acro"), "picture" -> JsString("https://localhost:8080/picture/2"))),
-      "profile_picture" -> JsString("https://localhost:8080/picture/1"),
-      "other_pictures" -> JsArray(JsString("https://localhost:8080/picture/2")),
+        JsObject("name" -> JsString("fire"), "picture" -> JsString("http://localhost:8080/picture/1")),
+        JsObject("name" -> JsString("acro"), "picture" -> JsString("http://localhost:8080/picture/2"))),
+      "profile_picture" -> JsString("http://localhost:8080/picture/1"),
+      "other_pictures" -> JsArray(JsString("http://localhost:8080/picture/2")),
       "shown" -> JsBoolean(false)
     )
     steve.asJsObject.getFields("id")    should be(expected.getFields("id"))
@@ -249,12 +254,12 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       "id" -> JsNumber(2),
       "name" -> JsString("dale"),
       "skills" -> JsArray(
-        JsObject("name" -> JsString("badminton"), "picture" -> JsString("https://localhost:8080/picture/3"))
+        JsObject("name" -> JsString("badminton"), "picture" -> JsString("http://localhost:8080/picture/3"))
       ),
-      "profile_picture" -> JsString("https://localhost:8080/picture/2"),
+      "profile_picture" -> JsString("http://localhost:8080/picture/2"),
       "other_pictures" -> JsArray(
-        JsString("https://localhost:8080/picture/3"),
-        JsString("https://localhost:8080/picture/4")),
+        JsString("http://localhost:8080/picture/3"),
+        JsString("http://localhost:8080/picture/4")),
       "shown" -> JsBoolean(true)
     )
     dale should be(expected)
@@ -268,8 +273,8 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |  "id":3,
         |  "name":"scarlet",
         |  "skills":["contortion", "burlesque"],
-        |  "profile_picture":"https://localhost:8080/picture/4",
-        |  "other_pictures":["https://localhost:8080/picture/5"],
+        |  "profile_picture":"http://localhost:8080/picture/4",
+        |  "other_pictures":["http://localhost:8080/picture/5"],
         |  "shown":true
         |}
       """.stripMargin.parseJson.convertTo[Performer]
@@ -289,7 +294,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |  "id":3,
         |  "name":"scarlet",
         |  "skills":[],
-        |  "profile_picture":"https://localhost:8080/picture/4",
+        |  "profile_picture":"http://localhost:8080/picture/4",
         |  "other_pictures":[],
         |  "shown":true
         |}
@@ -310,7 +315,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
         |{
         |  "id":3,
         |  "name":"scarlet",
-        |  "profile_picture":"https://localhost:8080/picture/4",
+        |  "profile_picture":"http://localhost:8080/picture/4",
         |  "shown":true
         |}
       """.

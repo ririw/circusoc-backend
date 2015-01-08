@@ -4,7 +4,6 @@ import com.circusoc.simplesite.Core
 import com.circusoc.simplesite.members._
 import com.circusoc.simplesite.users.permissions
 import org.slf4j.LoggerFactory
-import scalikejdbc.DB
 import spray.http._
 import spray.json._
 import spray.routing.HttpService
@@ -25,15 +24,23 @@ trait MemberService extends HttpService {
           entity(as[NewMemberRequest]) {newmember =>
             if (newmember.isArc && newmember.studentNumber.isEmpty) complete {
               HttpResponse(StatusCodes.BadRequest,
-              "{error: 'true', reason: 'If a student is an ARC member, they need a student number'}")}
+                JsObject("error" -> JsBoolean(true),
+                  "reason" -> JsString("If a student is an ARC member, they need a student number")).compactPrint)
+            }
             else complete {
               val studentRecord = newmember.studentNumber.map {n => new StudentRecord(n, newmember.isArc)}
               config.db.getDB.localTx { implicit session =>
                 Member.newMember(newmember.name, newmember.email, studentRecord, newmember.subscribed) match {
                   case Left(member) => HttpResponse(StatusCodes.OK, member.toJson.compactPrint)
-                  case Right(DuplicateNameError) => HttpResponse(StatusCodes.BadRequest, "{error: 'true', reason: 'Duplicate member name'}")
-                  case Right(DuplicateEmailError) => HttpResponse(StatusCodes.BadRequest, "{error: 'true', reason: 'Duplicate email address'}")
-                  case Right(DuplicateSNumError) => HttpResponse(StatusCodes.BadRequest, "{error: 'true', reason: 'Duplicate student number'}")
+                  case Right(DuplicateNameError) => HttpResponse(StatusCodes.BadRequest,
+                    JsObject("error" -> JsBoolean(true),
+                      "reason" -> JsString("Duplicate member name")).compactPrint)
+                  case Right(DuplicateEmailError) => HttpResponse(StatusCodes.BadRequest,
+                    JsObject("error" -> JsBoolean(true),
+                      "reason" -> JsString("Duplicate email address")).compactPrint)
+                  case Right(DuplicateSNumError) => HttpResponse(StatusCodes.BadRequest,
+                    JsObject("error" -> JsBoolean(true),
+                      "reason" -> JsString("Duplicate student number")).compactPrint)
                 }
               }
             }

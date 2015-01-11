@@ -22,13 +22,6 @@ case class StudentRecord(studentNumber: String, isArc: Boolean)
 
 /*
 // $COVERAGE-OFF$
-object StudentRecordJsonSupport
-  extends RootJsonFormat[StudentRecord]
-  with DefaultJsonProtocol {
-  override implicit def read(json: JsValue): StudentRecord = jsonFormat2(StudentRecord).read(json)
-  override implicit def write(obj: StudentRecord): JsValue = jsonFormat2(StudentRecord).write(obj)
-}
-// $COVERAGE-ON$
 */
 object StudentRecordJsonSupport extends DefaultJsonProtocol {
     implicit val studentRecordFormat = jsonFormat2(StudentRecord)
@@ -52,6 +45,7 @@ object MemberJsonProtocol {
     )
   }
 }
+// $COVERAGE-ON$
 
 object Member {
   def getMember(id: Long)(implicit config: WithConfig, session: DBSession): Option[Member] =

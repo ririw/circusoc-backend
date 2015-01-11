@@ -5,6 +5,9 @@ import java.sql.{Connection, DriverManager}
 
 import com.circusoc.simplesite._
 import com.circusoc.simplesite.pictures.PictureReference
+import com.circusoc.simplesite.users.AuthenticatedUser
+import com.circusoc.simplesite.users.User.UserBuilder
+import com.circusoc.simplesite.users.permissions.CanAdministerUsersPermission
 import org.codemonkey.simplejavamail.Email
 import org.dbunit.DBTestCase
 import org.dbunit.database.DatabaseConnection
@@ -325,32 +328,22 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
       val performer =
         "1".parseJson.convertTo[Performer]
     }
+  }
 
-  }
-  it should "deserialize skills" in {
-    import spray.json._
-    implicit val skillformatter = new Skill.SkillJsonFormat()
-    val skill1 = "\"fire\""
-    skill1.parseJson.convertTo[Skill] should be(Skill(1, "fire", PictureReference(1)))
-    val skill2 = "1"
-    intercept[spray.json.DeserializationException] {
-      skill2.parseJson.convertTo[Skill]
-    }
-  }
 }
 
 
 class MayAlterPerformersProofSpec extends FlatSpecLike {
-  it should "not initialize when we are in production" in {
-    implicit val config = new WithConfig {
-      override val isProduction = true
-      override val db: DB = new DB {}
-      override val hire: Hire = new Hire {}
-      override val paths: PathConfig = new PathConfig {}
-      override val mailer: MailerLike = new MailerLike {
-        override def sendMail(email: Email): Unit = ???
-      }
+  implicit val config = new WithConfig {
+    override val isProduction = true
+    override val db: DB = new DB {}
+    override val hire: Hire = new Hire {}
+    override val paths: PathConfig = new PathConfig {}
+    override val mailer: MailerLike = new MailerLike {
+      override def sendMail(email: Email): Unit = ???
     }
+  }
+  it should "not initialize when we are in production" in {
     intercept[AssertionError] {
       new DebugMayAlterPerformerProof()
     }

@@ -160,7 +160,7 @@ object Performer {
     performerDetails.build()
   }
 
-  def newPerformer(name: String, shown: Boolean, mayUpdateUserProof: MayAlterPerformersProof)
+def newPerformer(name: String, shown: Boolean, mayUpdateUserProof: MayAlterPerformersProof)
                   (implicit config: WithConfig): Performer = {
     val picture = PictureReference.defaultPicture.id
     val performerid = config.db.getDB.autoCommit {implicit session =>
@@ -228,7 +228,7 @@ object Skill {
 
     def write(skill: Skill) = JsObject("name" -> JsString(skill.skill), "picture" -> skill.picture.toJson)
     def read(value: JsValue) = value match {
-      case JsString(v) => Skill.getSkillByName(v)(config).getOrElse(deserializationError("Unkown skill"))
+      case JsString(v) => Skill.getSkillByName(v)(config).getOrElse(deserializationError("Unknown skill"))
       case _ => deserializationError("Skill expected")
     }
   }
@@ -278,7 +278,7 @@ class PerformerJsonFormat(implicit config: WithConfig)
           val performerPic = _profilePic.convertTo[PictureReference]
           val otherPics = _otherPics.map(_.convertTo[PictureReference]).toSet
           Performer(id.toLong, name, skills, performerPic, otherPics, shown)
-        case _ => deserializationError("Perfomer expected")
+        case _ => deserializationError("Performer expected")
       }
     case _ => deserializationError("Performer expected")
   }

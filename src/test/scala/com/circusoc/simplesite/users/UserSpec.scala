@@ -3,7 +3,7 @@ package com.circusoc.simplesite.users
 import java.sql.{Connection, DriverManager}
 
 import com.circusoc.simplesite._
-import com.circusoc.simplesite.users.User.UserBuilder
+import com.circusoc.simplesite.users.User.{MayAlterUsersProof, UserBuilder}
 import com.circusoc.simplesite.users.permissions._
 import org.codemonkey.simplejavamail.Email
 import org.dbunit.database.DatabaseConnection
@@ -309,5 +309,17 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     }
   }
 
-
+  "MayAlterPerformersProof" should "allow authed users" in {
+    val changingUser = new UserBuilder().addId(1).addUsername("Setve").
+      addPermission(permissions.CanChangePermissionsPermission()).build().get
+    val authedChanger = new AuthenticatedUser(changingUser.id, changingUser.username, changingUser.userPermissions)
+    MayAlterUsersProof.hasChangePermisProof(authedChanger)
+  }
+  it should "not allow unathorized users" in {
+    val changingUser = new UserBuilder().addId(1).addUsername("Setve").build().get
+    val authedChanger = new AuthenticatedUser(changingUser.id, changingUser.username, changingUser.userPermissions)
+    intercept[AssertionError] {
+      MayAlterUsersProof.hasChangePermisProof(authedChanger)
+    }
+  }
 }

@@ -1,0 +1,30 @@
+<dataset>
+    <picture id="1" mediatype="a" picture="a"></picture>
+    <picture id="2" mediatype="a" picture="a"></picture>
+    <picture id="3" mediatype="a" picture="a"></picture>
+    <picture id="4" mediatype="a" picture="a"></picture>
+    <picture id="5" mediatype="a" picture="a"></picture>
+    <picture id="6" mediatype="a" picture="a"></picture>
+
+    <skill id="1" skill="fire"      picture_id="1"></skill>
+    <skill id="2" skill="acro"      picture_id="2"></skill>
+    <skill id="3" skill="badminton" picture_id="3"></skill>
+    <skill id="4" skill="fadminton" picture_id="4"></skill>
+    <skill id="5" skill="contortion" picture_id="5"></skill>
+    <skill id="6" skill="burlesque"  picture_id="1"></skill>
+
+    <performer id="1" name="steve" profile_picture_id="1" shown="false"></performer>
+    <performer_skill performer_id="1" skill_id="1"></performer_skill>
+    <performer_skill performer_id="1" skill_id="2"></performer_skill>
+
+
+    <performer id="2" name="dale" profile_picture_id="2" shown="true"></performer>
+    <performer_skill performer_id="2" skill_id="3"></performer_skill>
+
+    <performer id="3" name="leela" profile_picture_id="4" shown="true"></performer>
+    <performer_picture performer_id="3" picture_id="5"></performer_picture>
+
+    <performer id="4" name="Carla" profile_picture_id="6" shown="false"></performer>
+    <performer_skill performer_id="4" skill_id="1"></performer_skill>
+</dataset>
+

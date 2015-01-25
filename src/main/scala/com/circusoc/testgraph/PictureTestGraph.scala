@@ -1,14 +1,12 @@
-package com.circusoc.simplesite.pictures
+package com.circusoc.testgraph
 
-import java.io.{FilenameFilter, File, FileFilter, FileInputStream}
-import javax.swing.filechooser.FileNameExtensionFilter
+import java.io.{File, FileInputStream, FilenameFilter}
 
 import com.circusoc.simplesite.WithConfig
+import com.circusoc.simplesite.pictures.{PictureReference, PictureResult}
 import com.circusoc.simplesite.users.AuthenticatedUser
 import com.circusoc.simplesite.users.permissions.ModifyImagesPermission
-import com.circusoc.testgraph.TestNodeFactory
 import com.typesafe.config.ConfigFactory
-import org.scalatest.FlatSpec
 
 import scala.collection.mutable
 import scala.util.Random
@@ -39,13 +37,5 @@ object PictureTestGraph {
   }
 }
 
-class PictureTestGraphSpec extends FlatSpec {
-  import com.circusoc.simplesite.GraphTestingConf._
-  it should "create pictures" in {
-    val factory = PictureTestGraph.pictureFactory
-    val picture = factory.randomItem()
-    assert(PictureReference.getPicture(picture).isDefined)
-  }
-}
 
 

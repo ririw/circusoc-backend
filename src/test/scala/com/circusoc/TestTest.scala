@@ -4,12 +4,10 @@ import java.net.URL
 
 import akka.actor.ActorSystem
 import com.circusoc.simplesite._
-import com.circusoc.simplesite.performers.PerformerTestGraph
-import com.circusoc.simplesite.pictures.PictureTestGraph
 import com.circusoc.simplesite.services._
-import com.circusoc.simplesite.users.UserTestGraph
 import com.circusoc.simplesite.users.permissions
 import com.circusoc.taglink._
+import com.circusoc.testgraph.{UserTestGraph, PictureTestGraph, PerformerTestGraph}
 import com.circusoc.testgraph.testgraph._
 import org.codemonkey.simplejavamail.{Email, Mailer}
 import scalikejdbc.{ConnectionPool, NamedDB}
@@ -24,6 +22,9 @@ import spray.routing.SimpleRoutingApp
  */
 object TestTest extends App {
   val command = if (args.length == 0) {
+    Console.println(s"${Console.BLUE_B}'Slow acid is a pretty good song")
+    Console.println(s"${Console.BLUE_B}'Slow acid is a pretty good song")
+    Console.println(s"${Console.BLUE_B}'Slow acid is a pretty good song")
     Console.readLine(s"${Console.GREEN}Enter the setup you want: ")
   } else {
     args(0)

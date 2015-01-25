@@ -10,7 +10,7 @@ import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
 import org.codemonkey.simplejavamail.{Mailer, Email}
 
-object Main extends App
+object Main extends Object // extends App // :D
             with SimpleRoutingApp
             with Core
             with AuthService

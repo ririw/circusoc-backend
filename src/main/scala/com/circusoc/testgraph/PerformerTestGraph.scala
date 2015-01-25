@@ -1,16 +1,16 @@
-package com.circusoc.simplesite.performers
+package com.circusoc.testgraph
 
 import com.circusoc.simplesite.WithConfig
-import com.circusoc.simplesite.members.Member
+import com.circusoc.simplesite.performers.{DebugMayAlterPerformerProof, PendingSkill, Performer, Skill}
 import com.circusoc.simplesite.pictures.PictureReference
 import com.circusoc.simplesite.users.permissions.Permission
 import com.circusoc.simplesite.users.{Password, User}
-import com.circusoc.testgraph.{NodeJoiner, TestNodeFactory}
 import org.scalacheck.Gen
 import org.slf4j.LoggerFactory
 
-import scala.collection.mutable
-
+/**
+ * Created by riri on 25/01/15.
+ */
 object PerformerTestGraph {
   val logger = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -92,5 +92,3 @@ object PerformerTestGraph {
     }
   }
 }
-
-case class PendingSkill(name: String)

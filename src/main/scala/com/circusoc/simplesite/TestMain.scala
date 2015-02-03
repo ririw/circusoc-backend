@@ -37,7 +37,7 @@ object TestMain extends App {
     val skillPics   = List.fill(numSkills)(picF.randomNode)
     val skills      = List.fill(numSkills)(pendingSkillF.randomNode).join.bijectiveJoin(skillPics)
 
-    users.map(userPermJoiner.join(_, permissions.CanUpdateMembers()))
+    users.map(userPermJoiner.join(_, permissions.CanUpdateMembers))
     performers.join.bijectiveJoin(profilePics)(performerProfilePicJoiner)
     performers.join.randomSurjectionJoin(otherpics)(performerPictureJoiner)
     performers.join.randomJoin(skills)
@@ -56,6 +56,7 @@ with PictureService
 with CorsService
 with TrackingEventService {
   implicit val system = ActorSystem("my-system")
+  /*
   override implicit lazy val config: WithConfig = new WithConfig {
     override val isProduction = false
     override val db = new com.circusoc.simplesite.DB{
@@ -80,6 +81,8 @@ with TrackingEventService {
       override val baseUrl: URL = new URL("http://localhost:8080")
     }
   }
+  */
+  override implicit lazy val config: WithConfig = new PropertiesConfig
 
   def serve(): Unit = {
     startServer(interface = "localhost", port = 8080) {

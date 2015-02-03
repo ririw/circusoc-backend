@@ -13,9 +13,8 @@ class ConfigHelperSpec extends FlatSpec{
   val conf = ConfigFactory.load()
 
   it should "have a random dir" in {
-    val conf = ConfigFactory.load()
     try {
-      val s = conf.getString("com.circusoc.test.pictures.randomimages_dir")
+      val s = conf.getString("com.circusoc.pictures.randomimages_dir")
       if (s.length < 0)
         fail("The string for the config item was too short. Consider un-ignoring some other tests to help debug")
       assert(s.length > 0)
@@ -26,11 +25,11 @@ class ConfigHelperSpec extends FlatSpec{
   }
 
   it should "have the circus config" ignore {
-    assert(conf.hasPath("com.circusoc.test"))
+    assert(conf.hasPath("com.circusoc"))
   }
 
   it should "print out all the config, just for you" ignore {
-    val circusconf = conf.getConfig("com.circusoc.test")
+    val circusconf = conf.getConfig("com.circusoc")
     println("here is your config")
     println("###############################")
     println(circusconf)
@@ -38,7 +37,6 @@ class ConfigHelperSpec extends FlatSpec{
   }
 
   it should "print out where it thinks the config is coming from" ignore {
-    val conf = ConfigFactory.load()
     println(conf.root().render())
   }
 }

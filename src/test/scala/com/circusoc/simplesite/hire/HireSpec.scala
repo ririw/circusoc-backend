@@ -20,7 +20,7 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with Pro
 
   def getJDBC(): Connection = {
     Class.forName("org.h2.Driver")
-    val c =DriverManager.getConnection("jdbc:h2:mem:hirespec;DB_CLOSE_DELAY=-1", "sa", "")
+    val c = DriverManager.getConnection("jdbc:h2:mem:hirespec;DB_CLOSE_DELAY=-1", "sa", "")
     c.setAutoCommit(true)
     c
   }

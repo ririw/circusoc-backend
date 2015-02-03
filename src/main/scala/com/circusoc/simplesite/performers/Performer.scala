@@ -42,7 +42,6 @@ case class Performer(id: Long,
   def removeSkill(skill_id: Long, proof: MayAlterPerformersProof)(implicit config: WithConfig): Performer = {
     config.db.getDB.autoCommit {implicit session =>
       if (skills.exists(_.id == skill_id)) {
-        println("REMOVIE")
         sql"""DELETE FROM performer_skill WHERE performer_id=$id and skill_id=$skill_id""".execute()()
         this.copy(skills = skills.filter(_.id != skill_id))
       } else {

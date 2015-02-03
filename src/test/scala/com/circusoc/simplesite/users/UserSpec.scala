@@ -64,7 +64,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     val userAdmin = User.getUserByName("Admin")
     userAdmin.map(_.id) should be(Some(1))
     userAdmin.map(_.username) should be(Some("Admin"))
-    assert(userAdmin.exists(_.hasPermission(CanChangePermissionsPermission())))
+    assert(userAdmin.exists(_.hasPermission(CanChangePermissionsPermission)))
   }
 
   "the user class" should "deal with permissions" in {
@@ -164,7 +164,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 
   it should "change other's passwords if the changing user has the change permission" in {
     val user = new UserBuilder().addId(1).addUsername("Admin").build().get
-    val changingUser = new UserBuilder().addId(1).addUsername("Setve").addPermission(CanAdministerUsersPermission()).build().get
+    val changingUser = new UserBuilder().addId(1).addUsername("Setve").addPermission(CanAdministerUsersPermission).build().get
     val authedChanger = new AuthenticatedUser(changingUser.id, changingUser.username, changingUser.userPermissions)
     val proof = User.MayChangePassProof.hasChangePerm(authedChanger)
     user.changePassword(Password("blerp"), proof)
@@ -176,40 +176,40 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 
   "the permissions stuff" should "add permissions" in {
     val user = User.getUserByID(2).get
-    assert(!user.hasPermission(CanChangePermissionsPermission()))
+    assert(!user.hasPermission(CanChangePermissionsPermission))
     val changingUser = User.getUserByID(1).get
-    val changedUser = user.addPermission(CanChangePermissionsPermission(), new User.DebugMayAlterUsersProof)
-    assert(changedUser.hasPermission(CanChangePermissionsPermission()))
+    val changedUser = user.addPermission(CanChangePermissionsPermission, new User.DebugMayAlterUsersProof)
+    assert(changedUser.hasPermission(CanChangePermissionsPermission))
     val retrievedUser = User.getUserByID(2).get
-    assert(retrievedUser.hasPermission(CanChangePermissionsPermission()))
+    assert(retrievedUser.hasPermission(CanChangePermissionsPermission))
   }
 
   it should "remove permissions" in {
     val user = User.getUserByID(2).get
     val changingUser = User.getUserByID(1).get
-    val changedUser = user.addPermission(CanEditTagsPermission(), new User.DebugMayAlterUsersProof)
-    assert(changedUser.hasPermission(CanEditTagsPermission()))
+    val changedUser = user.addPermission(CanEditTagsPermission, new User.DebugMayAlterUsersProof)
+    assert(changedUser.hasPermission(CanEditTagsPermission))
     val retrievedUser = User.getUserByID(2).get
-    assert(retrievedUser.hasPermission(CanEditTagsPermission()))
+    assert(retrievedUser.hasPermission(CanEditTagsPermission))
 
-    changedUser.removePermission(CanEditTagsPermission(), new User.DebugMayAlterUsersProof)
+    changedUser.removePermission(CanEditTagsPermission, new User.DebugMayAlterUsersProof)
     val nopermuser = User.getUserByID(2).get
 
-    assert(!nopermuser.hasPermission(CanEditTagsPermission()))
+    assert(!nopermuser.hasPermission(CanEditTagsPermission))
   }
   it should "ignore non-existent permissions" in {
     val user = User.getUserByID(2).get
     val changingUser = User.getUserByID(1).get
-    val changedUser = user.addPermission(CanEditTagsPermission(), new User.DebugMayAlterUsersProof)
-    assert(changedUser.hasPermission(CanEditTagsPermission()))
+    val changedUser = user.addPermission(CanEditTagsPermission, new User.DebugMayAlterUsersProof)
+    assert(changedUser.hasPermission(CanEditTagsPermission))
     val retrievedUser = User.getUserByID(2).get
-    assert(retrievedUser.hasPermission(CanEditTagsPermission()))
+    assert(retrievedUser.hasPermission(CanEditTagsPermission))
 
-    changedUser.removePermission(CanEditTagsPermission(), new User.DebugMayAlterUsersProof)
-    changedUser.removePermission(CanEditTagsPermission(), new User.DebugMayAlterUsersProof)
+    changedUser.removePermission(CanEditTagsPermission, new User.DebugMayAlterUsersProof)
+    changedUser.removePermission(CanEditTagsPermission, new User.DebugMayAlterUsersProof)
 
     val nopermuser = User.getUserByID(2).get
-    assert(!nopermuser.hasPermission(CanEditTagsPermission()))
+    assert(!nopermuser.hasPermission(CanEditTagsPermission))
   }
 
   it should "insert new users" in {
@@ -234,7 +234,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
     import com.circusoc.simplesite.users.User.UserJSONProtocol._
     import spray.json._
     val jsUser = "{\"id\":3,\"username\":\"madeup\",\"permissions\":[\"CanChangePermissionsPermission\"]}"
-    jsUser.parseJson.convertTo[User] should be(new User(3, "madeup", Set(CanChangePermissionsPermission())))
+    jsUser.parseJson.convertTo[User] should be(new User(3, "madeup", Set(CanChangePermissionsPermission)))
   }
   it should "break with made up permissions" in {
     import com.circusoc.simplesite.users.User.UserJSONProtocol._
@@ -311,7 +311,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 
   "MayAlterPerformersProof" should "allow authed users" in {
     val changingUser = new UserBuilder().addId(1).addUsername("Setve").
-      addPermission(permissions.CanChangePermissionsPermission()).build().get
+      addPermission(permissions.CanChangePermissionsPermission).build().get
     val authedChanger = new AuthenticatedUser(changingUser.id, changingUser.username, changingUser.userPermissions)
     MayAlterUsersProof.hasChangePermisProof(authedChanger)
   }

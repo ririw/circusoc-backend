@@ -19,7 +19,8 @@ object UserTestGraph {
   }
 
   def permissionsFactory[Perm <: permissions.Permission](implicit tag: ClassTag[Perm]): TestNodeFactory[Perm] = {
-    val newPermission = tag.runtimeClass.newInstance().asInstanceOf[Perm]
+    println(permissions.CanAdministerUsersPermission.getClass)
+    val newPermission = tag.runtimeClass.getField("MODULE$").get(null).asInstanceOf[Perm]
     new TestNodeFactory[Perm] { override def randomItem(): Perm = newPermission }
   }
 }

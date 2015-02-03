@@ -1,10 +1,12 @@
 package com.circusoc.simplesite
 
+import java.io.File
 import java.net.URL
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics
+import com.typesafe.config.{Config, ConfigFactory}
 import org.codemonkey.simplejavamail.{Mailer, Email}
 import org.slf4j.LoggerFactory
 import scalikejdbc._
@@ -19,14 +21,19 @@ trait WithConfig {
   def defaultPictureStream = this.getClass.getResourceAsStream("/com/circusoc/simplesite/pictures/defaultimage.jpg")
 }
 
-trait PropertiesConfig extends WithConfig {
-  val properties: Properties
-  override def defaultPictureStream = this.getClass.getResourceAsStream(properties.getProperty("defaultimage"))
-  override val isProduction = properties.getProperty("isProduction").toBoolean
-  override val db = new PropertiesConfigDB(properties)
-  override val hire = new PropertiesConfigHire(properties)
-  override val mailer = new PropertiesConfigMailer(properties, hire)
-  override val paths = new PropertiesConfigPath(properties)
+class PropertiesConfig() extends WithConfig {
+  val logger = LoggerFactory.getLogger(classOf[PropertiesConfig].getName)
+  val config: Config = {
+    val configFile = new File("backend.conf")
+    assert(configFile.canRead)
+    ConfigFactory.parseFile(new File("backend.conf"))
+  }
+  override def defaultPictureStream = this.getClass.getResourceAsStream(config.getString("com.circusoc.defaultpicture"))
+  override val isProduction = config.getBoolean("com.circusoc.isproduction")
+  override val db = new PropertiesConfigDB(config)
+  override val hire = new PropertiesConfigHire(config)
+  override val mailer = new PropertiesConfigMailer(config, hire)
+  override val paths = new PropertiesConfigPath(config)
 }
 
 class Stats {
@@ -47,33 +54,35 @@ trait DB {
   def getDB: NamedDB = NamedDB(poolName)
   def setup() {
     Class.forName("org.h2.Driver")
-    ConnectionPool.add(poolName, "jdbc:h2:~/tmp/test", "sa", "")
+    ConnectionPool.add(poolName, "ajdbc:h2:~/tmp/test", "sa", "")
     // ConnectionPool.add(poolName, "jdbc:h2:mem:production;DB_CLOSE_DELAY=-1", "sa", "")
   }
 }
 
-class PropertiesConfigDB(properties: Properties) extends DB{
+class PropertiesConfigDB(config: Config) extends DB {
   override def setup(): Unit = {
-    val dbpath = properties.getProperty("dbpath")
-    val dbuser = properties.getProperty("dbuser")
-    val dbpass = properties.getProperty("dbpass")
+    val dbpath = config.getString("com.circusoc.db.path")
+    val dbuser = config.getString("com.circusoc.db.user")
+    val dbpass = config.getString("com.circusoc.db.pass")
     Class.forName("org.h2.Driver")
-    if (dbpass == null || dbpath == "" || dbpass == "mem")
-      ConnectionPool.add(poolName, "jdbc:h2:mem:production;DB_CLOSE_DELAY=-1", "sa", "")
-    else
+    if (dbpath == null || dbpath == "" || dbpath == "mem") {
+      val url = s"jdbc:h2:mem:${poolName.name};DB_CLOSE_DELAY=-1"
+      ConnectionPool.add(poolName, url, dbuser, dbpass)
+    } else {
       ConnectionPool.add(poolName, "jdbc:h2:" + dbpath, dbuser, dbpass)
+    }
   }
 }
 
 trait Hire {
-  val smtpHost: String = "mailtrap.io"
-  val smtpPort: Integer = 2525
-  val smtpUser: String = "24485bf9f4db6d2e4"
-  val smtpPass: String = "3dd1b073699411"
-  val fromEmail: String = "gigs@circusoc.com"
-  val fromName: String = "gigs"
-  val subject: String = "Someone wants to hire us!"
-  val gigManagerName: String = "Richard"
+  val smtpHost: String        = "mailtrap.io"
+  val smtpPort: Integer       = 2525
+  val smtpUser: String        = "24485bf9f4db6d2e4"
+  val smtpPass: String        = "3dd1b073699411"
+  val fromEmail: String       = "gigs@circusoc.com"
+  val fromName: String        = "gigs"
+  val subject: String         = "Someone wants to hire us!"
+  val gigManagerName: String  = "Richard"
   val gigManagerEmail: String = "richard@circusoc.com"
   val emailText: String = scala.io.Source.fromInputStream(
     this.getClass.getResourceAsStream("/com/circusoc/simplesite/hire/email.txt")).getLines().mkString("\n")
@@ -81,30 +90,30 @@ trait Hire {
     this.getClass.getResourceAsStream("/com/circusoc/simplesite/hire/email.html")).getLines().mkString("\n")
 }
 
-class PropertiesConfigHire(properties: Properties) extends Hire {
-  override val smtpHost: String        = properties.getProperty("smtpHost"       )
-  override val smtpPort: Integer       = properties.getProperty("smtpPort"       ).toInt
-  override val smtpUser: String        = properties.getProperty("smtpUser"       )
-  override val smtpPass: String        = properties.getProperty("smtpPass"       )
-  override val fromEmail: String       = properties.getProperty("fromEmail"      )
-  override val fromName: String        = properties.getProperty("fromName"       )
-  override val subject: String         = properties.getProperty("subject"        )
-  override val gigManagerName: String  = properties.getProperty("gigManagerName" )
-  override val gigManagerEmail: String = properties.getProperty("gigManagerEmail")
+class PropertiesConfigHire(config: Config) extends Hire {
+  override val smtpHost: String        = config.getString("com.circusoc.hire.smtpHost"       )
+  override val smtpPort: Integer       = config.getInt   ("com.circusoc.hire.smtpPort"       )
+  override val smtpUser: String        = config.getString("com.circusoc.hire.smtpUser"       )
+  override val smtpPass: String        = config.getString("com.circusoc.hire.smtpPass"       )
+  override val fromEmail: String       = config.getString("com.circusoc.hire.fromEmail"      )
+  override val fromName: String        = config.getString("com.circusoc.hire.fromName"       )
+  override val subject: String         = config.getString("com.circusoc.hire.subject"        )
+  override val gigManagerName: String  = config.getString("com.circusoc.hire.gigManagerName" )
+  override val gigManagerEmail: String = config.getString("com.circusoc.hire.gigManagerEmail")
   override val emailText: String = scala.io.Source.fromInputStream(
-    this.getClass.getResourceAsStream(properties.getProperty("emailtextPath"))).getLines().mkString("\n")
+    this.getClass.getResourceAsStream(config.getString("com.circusoc.hire.emailtextPath"))).getLines().mkString("\n")
   override val emailHTML: String = scala.io.Source.fromInputStream(
-    this.getClass.getResourceAsStream(properties.getProperty("emailhtmlPath"))).getLines().mkString("\n")
+    this.getClass.getResourceAsStream(config.getString("com.circusoc.hire.emailhtmlPath"))).getLines().mkString("\n")
 
 }
 
 trait MailerLike {
   def sendMail(email: Email): Unit
 }
-class PropertiesConfigMailer(properties: Properties, hire: Hire) extends MailerLike{
+class PropertiesConfigMailer(config: Config, hire: Hire) extends MailerLike{
   val logger = LoggerFactory.getLogger(classOf[PropertiesConfigMailer].getName)
 
-  val sender = if (properties.getProperty("sendMail").toBoolean) {
+  val sender = if (config.getBoolean("com.circusoc.sendMail")) {
     def m(email: Email): Unit = {
       val mailer = new Mailer(hire.smtpHost, hire.smtpPort, hire.smtpUser, hire.smtpPass)
       mailer.sendMail(email)
@@ -128,8 +137,8 @@ trait PathConfig {
   def cdnUrl: URL = new URL("http://localhost")
 }
 
-class PropertiesConfigPath(properties: Properties) extends PathConfig {
-  def baseURL: URL = new URL(properties.getProperty("baseURL"))
-  def cookieURL: String = baseURL.getHost
-  def cdnURL: URL = new URL(properties.getProperty("cdnURL"))
+class PropertiesConfigPath(config: Config) extends PathConfig {
+  override def baseUrl: URL = new URL(config.getString("com.circusoc.paths.baseURL"))
+  override def cookieUrl: String = config.getString("com.circusoc.paths.cookieURL")
+  override def cdnUrl: URL = new URL(config.getString("com.circusoc.paths.cdnURL"))
 }

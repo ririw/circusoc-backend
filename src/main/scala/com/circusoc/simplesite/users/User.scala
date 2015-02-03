@@ -176,7 +176,7 @@ object User {
   sealed trait MayChangePassProof
   object MayChangePassProof {
     def hasChangePerm(changingUser: AuthenticatedUser): MayChangePassProof = {
-      assert(changingUser.hasPermission(permissions.CanAdministerUsersPermission()))
+      assert(changingUser.hasPermission(permissions.CanAdministerUsersPermission))
       new MayChangePassProof {}
     }
     def isChangingUser(changingUser: AuthenticatedUser, changedUser: User): MayChangePassProof = {
@@ -236,7 +236,7 @@ object User {
   sealed trait MayAlterUsersProof
   object MayAlterUsersProof {
     def hasChangePermisProof(changingUser: AuthenticatedUser): MayAlterUsersProof = {
-      assert(changingUser.hasPermission(permissions.CanChangePermissionsPermission()))
+      assert(changingUser.hasPermission(permissions.CanChangePermissionsPermission))
       new MayAlterUsersProof {}
     }
   }

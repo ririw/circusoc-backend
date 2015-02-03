@@ -86,7 +86,7 @@ object TestTest extends App {
     val skillPics   = List.fill(numSkills)(picF.randomNode)
     val skills      = List.fill(numSkills)(pendingSkillF.randomNode).join.bijectiveJoin(skillPics)
 
-    users.map(userPermJoiner.join(_, permissions.CanUpdateMembers()))
+    users.map(userPermJoiner.join(_, permissions.CanUpdateMembers))
     performers.join.bijectiveJoin(profilePics)(performerProfilePicJoiner)
     performers.join.randomSurjectionJoin(otherpics)(performerPictureJoiner)
     performers.join.randomJoin(skills)

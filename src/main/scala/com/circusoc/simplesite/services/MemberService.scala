@@ -20,7 +20,7 @@ trait MemberService extends HttpService {
   val memberroutes = path("member") {
     put {
       authenticate(authenticateUser) { user =>
-        authorize(user.hasPermission(permissions.CanUpdateMembers())) {
+        authorize(user.hasPermission(permissions.CanUpdateMembers)) {
           entity(as[NewMemberRequest]) {newmember =>
             if (newmember.isArc && newmember.studentNumber.isEmpty) complete {
               HttpResponse(StatusCodes.BadRequest,

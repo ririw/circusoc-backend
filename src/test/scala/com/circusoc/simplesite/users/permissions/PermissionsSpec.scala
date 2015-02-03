@@ -8,11 +8,11 @@ import spray.json._
 
 class PermissionsSpec extends FlatSpec with PropertyChecks {
   it should "Correctly find permissions" in {
-    Permission.apply("CanAdministerUsersPermission") should be(CanAdministerUsersPermission())
-    Permission.apply("CanChangePermissionsPermission") should be(CanChangePermissionsPermission())
-    Permission.apply("ModifyImagesPermission") should be(ModifyImagesPermission())
-    Permission.apply("CanUpdateMembers") should be(CanUpdateMembers())
-    Permission.apply("CanEditTagsPermission") should be(CanEditTagsPermission())
+    Permission.apply("CanAdministerUsersPermission") should be(CanAdministerUsersPermission)
+    Permission.apply("CanChangePermissionsPermission") should be(CanChangePermissionsPermission)
+    Permission.apply("ModifyImagesPermission") should be(ModifyImagesPermission)
+    Permission.apply("CanUpdateMembers") should be(CanUpdateMembers)
+    Permission.apply("CanEditTagsPermission") should be(CanEditTagsPermission)
   }
 
   it should "Reject crazy permissions" in {
@@ -24,11 +24,11 @@ class PermissionsSpec extends FlatSpec with PropertyChecks {
   it should "Serialize permissions" in {
     val validCombos = Table(
       "object" -> "str",
-      CanAdministerUsersPermission() -> "CanAdministerUsersPermission",
-      CanChangePermissionsPermission() -> "CanChangePermissionsPermission",
-      ModifyImagesPermission() -> "ModifyImagesPermission",
-      CanUpdateMembers() -> "CanUpdateMembers",
-      CanEditTagsPermission() -> "CanEditTagsPermission"
+      CanAdministerUsersPermission -> "CanAdministerUsersPermission",
+      CanChangePermissionsPermission -> "CanChangePermissionsPermission",
+      ModifyImagesPermission -> "ModifyImagesPermission",
+      CanUpdateMembers -> "CanUpdateMembers",
+      CanEditTagsPermission -> "CanEditTagsPermission"
     )
 
     forAll(validCombos) {

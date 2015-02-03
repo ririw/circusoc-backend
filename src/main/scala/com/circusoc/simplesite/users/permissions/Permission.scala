@@ -8,33 +8,33 @@ sealed trait Permission {
   val asPermission = this.asInstanceOf[Permission]
 }
 
-case class CanAdministerUsersPermission() extends Permission {
+case object CanAdministerUsersPermission extends Permission {
   val name = "CanAdministerUsersPermission"
 }
 
-case class CanChangePermissionsPermission() extends Permission {
+case object CanChangePermissionsPermission extends Permission {
   val name = "CanChangePermissionsPermission"
 }
 
-case class CanEditTagsPermission() extends Permission {
+case object CanEditTagsPermission extends Permission {
   val name = "CanEditTagsPermission"
 }
 
-case class CanUpdateMembers() extends Permission {
+case object CanUpdateMembers extends Permission {
   val name = "CanUpdateMembers"
 }
 
-case class ModifyImagesPermission() extends Permission {
+case object ModifyImagesPermission extends Permission {
   val name = "ModifyImagesPermission"
 }
 
 object Permission {
   def apply(name: String): Permission = {name match {
-    case "CanAdministerUsersPermission" => CanAdministerUsersPermission()
-    case "CanChangePermissionsPermission" => CanChangePermissionsPermission()
-    case "ModifyImagesPermission" => ModifyImagesPermission()
-    case "CanUpdateMembers" => CanUpdateMembers()
-    case "CanEditTagsPermission" => CanEditTagsPermission()
+    case "CanAdministerUsersPermission" => CanAdministerUsersPermission
+    case "CanChangePermissionsPermission" => CanChangePermissionsPermission
+    case "ModifyImagesPermission" => ModifyImagesPermission
+    case "CanUpdateMembers" => CanUpdateMembers
+    case "CanEditTagsPermission" => CanEditTagsPermission
     case _ => throw new PermissionConstructionException(s"Invalid permission: $name")
   }}
 

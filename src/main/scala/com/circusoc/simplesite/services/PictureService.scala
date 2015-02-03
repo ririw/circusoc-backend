@@ -19,7 +19,7 @@ trait PictureService extends HttpService {
     path("picture") {
       post {
         authenticate(authenticateUser) { user =>
-          authorize(user.hasPermission(ModifyImagesPermission())) {
+          authorize(user.hasPermission(ModifyImagesPermission)) {
             respondWithHeader(HttpHeaders.`Content-Type`(MediaTypes.`application/json`)) {
               entity(as[MultipartFormData]) { formData =>
                 complete {
@@ -31,13 +31,12 @@ trait PictureService extends HttpService {
                         val file: ByteArrayInputStream = new ByteArrayInputStream(entity.buffer)
                         val pic = PictureResult(file)
                         pic match {
-                          case Success(upload) =>
+                          case Some(upload) =>
                             val uploaded: PictureReference = PictureReference.putPicture(upload, user)
                             HttpResponse(StatusCodes.Created, uploaded.toJson.compactPrint)
-                          case Failure(MediaTypeException(_)) =>
+                          case None =>
                             HttpResponse(StatusCodes.BadRequest,
                               JsObject("error" -> JsString("Invalid file type")).compactPrint)
-                          case Failure(e) => throw e // throw the exception
                         }
                     }
                   }
@@ -64,7 +63,7 @@ trait PictureService extends HttpService {
       delete {
         respondWithMediaType(MediaTypes.`application/json`) {
           authenticate(authenticateUser) { user =>
-            authorize(user.hasPermission(ModifyImagesPermission())) {
+            authorize(user.hasPermission(ModifyImagesPermission)) {
                 PictureReference.deletePicture(PictureReference(id), user) match {
                   case true => complete {
                     HttpResponse(StatusCodes.NoContent)

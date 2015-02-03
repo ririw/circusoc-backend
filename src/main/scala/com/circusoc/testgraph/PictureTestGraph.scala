@@ -12,7 +12,13 @@ import scala.collection.mutable
 import scala.util.Random
 
 object PictureTestGraph {
-  val conf = ConfigFactory.load()
+  val conf = {
+    val configFile = new File("./backend.conf")
+    if (configFile.canRead)
+      ConfigFactory.parseFile(configFile)
+    else
+      ConfigFactory.load()
+  }
   val picFilter = new FilenameFilter {
     override def accept(dir: File, name: String): Boolean = {
       val namelower = name.toLowerCase
@@ -21,12 +27,12 @@ object PictureTestGraph {
   }
   def pictureFactory(implicit config: WithConfig): TestNodeFactory[PictureReference] = {
     new TestNodeFactory[PictureReference] {
-      val pictureLocation = new File(conf.getString("com.circusoc.test.pictures.randomimages_dir"))
+      val pictureLocation = new File(conf.getString("com.circusoc.pictures.randomimages_dir"))
       assert(pictureLocation.exists() && pictureLocation.isDirectory, "Could not find images")
       val pictures = Random.shuffle(pictureLocation.listFiles(picFilter).toList)
       val pictureQueue = new mutable.Queue[File]()
       pictureQueue ++= pictures
-      val fakeUser = new AuthenticatedUser(-1, "steve", Set(ModifyImagesPermission()))
+      val fakeUser = new AuthenticatedUser(-1, "steve", Set(ModifyImagesPermission))
       override def randomItem(): PictureReference = {
         val selectedPic = pictureQueue.dequeue()
         val is = new FileInputStream(selectedPic)

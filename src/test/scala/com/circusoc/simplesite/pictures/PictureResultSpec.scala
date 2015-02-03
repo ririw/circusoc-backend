@@ -14,8 +14,6 @@ import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
 import java.net.URL
 import org.scalatest.Matchers._
 import spray.http.{MediaTypes, MediaType}
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream
-import scala.util.{Failure, Success}
 
 /**
  *
@@ -63,9 +61,11 @@ class PictureResultSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter
       ("test.gif", MediaTypes.`image/gif`)
     )
     TableDrivenPropertyChecks.forAll(imageFiles) {(filename: String, mediaType: MediaType) =>
-      val picture = pictureFromTestFile(filename)
+      val picture_o = pictureFromTestFile(filename)
       val is = classOf[PictureResultSpec].getResourceAsStream(s"/com/circusoc/simplesite/pictures/$filename")
       val data = Stream.continually(is.read()).takeWhile(-1 !=).map(_.toByte).toArray
+      assert(picture_o.isDefined)
+      val picture = picture_o.get
       picture.mediaType should be(mediaType)
       picture.data.take(20)      should be(data.take(20))
       picture.data.takeRight(20) should be(data.takeRight(20))
@@ -74,14 +74,11 @@ class PictureResultSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter
     }
   }
   it should "reject a non-picture" in {
-    intercept[MediaTypeException] {
-      pictureFromTestFile("mediaFailureTest.xml")
-    }
+    pictureFromTestFile("mediaFailureTest.xml") should be(None)
   }
 
-  def pictureFromTestFile(filename: String): PictureResult = {
-    PictureResult(classOf[PictureResultSpec].
-      getResourceAsStream(s"/com/circusoc/simplesite/pictures/$filename")).get
+  def pictureFromTestFile(filename: String): Option[PictureResult] = {
+    PictureResult(classOf[PictureResultSpec].getResourceAsStream(s"/com/circusoc/simplesite/pictures/$filename"))
   }
 
   it should "only allow a subset of media types" in {
@@ -93,7 +90,7 @@ class PictureResultSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter
     )
     TableDrivenPropertyChecks.forAll(allowedTypes) { (t: MediaType, s: String) =>
       PictureResult.isValidMediaType(t) should be(true)
-      PictureResult.getMediaType(s) should be(Success(t))
+      PictureResult.getMediaType(s) should be(Some(t))
     }
 
     PictureResult.isValidMediaType(MediaTypes.`image/pict`) should be(false)
@@ -106,12 +103,12 @@ class PictureResultSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter
     TableDrivenPropertyChecks.forAll(disallowdTypes) { (t: MediaType, s: String) =>
       PictureResult.isValidMediaType(t) should be(false)
       PictureResult.getMediaType(s) match {
-        case Success(_) => assert(false, "should have failed, this was an invalid mediatype")
+        case Some(_) => assert(false, "should have failed, this was an invalid mediatype")
         case _ => Unit
       }
     }
     PictureResult.getMediaType("blerg") match {
-      case Success(_) => assert(false, "should have failed, this was an invalid mediatype")
+      case Some(_) => assert(false, "should have failed, this was an invalid mediatype")
       case _ => Unit
     }
   }

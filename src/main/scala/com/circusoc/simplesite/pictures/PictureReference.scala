@@ -75,7 +75,7 @@ object PictureReference {
 
   def putPicture(picture: PictureResult, insertingUser: AuthenticatedUser)
                 (implicit config: WithConfig): PictureReference = {
-    assert(insertingUser.hasPermission(ModifyImagesPermission()))
+    assert(insertingUser.hasPermission(ModifyImagesPermission))
     putPicture(picture)
   }
 
@@ -90,7 +90,7 @@ object PictureReference {
 
   def deletePicture(picture: PictureReference, insertingUser: AuthenticatedUser)
                    (implicit config: WithConfig): Boolean = {
-    assert(insertingUser.hasPermission(ModifyImagesPermission()))
+    assert(insertingUser.hasPermission(ModifyImagesPermission))
     config.db.getDB.localTx {implicit session =>
       val existsResult = sql"""SELECT COUNT(*) FROM picture WHERE id=${picture.id}""".map(_.int(1)).first()()
       val exists = existsResult match {
@@ -141,7 +141,7 @@ case class PictureResult(data: Array[Byte], mediaType: MediaType) extends Equals
 }
 
 object PictureResult {
-  def apply(data: InputStream): Try[PictureResult] = {
+  def apply(data: InputStream): Option[PictureResult] = {
     val dat = Stream.continually(data.read).takeWhile(_ != -1).map(_.toByte).toArray
     val is = new ByteArrayInputStream(dat)
     val mimeType = URLConnection.guessContentTypeFromStream(is)
@@ -157,13 +157,12 @@ object PictureResult {
   )
 
   def isValidMediaType(mediaType: MediaType): Boolean = validMediaTypes.contains(mediaType)
-  def getMediaType(name: String): Try[MediaType] = {
+  def getMediaType(name: String): Option[MediaType] = {
     name match {
-      case "image/gif"  => Success(MediaTypes.`image/gif`)
-      case "image/jpeg" => Success(MediaTypes.`image/jpeg`)
-      case "image/png"  => Success(MediaTypes.`image/png`)
-      case _ =>
-        Failure(new MediaTypeException("Invalid media type: " + name))
+      case "image/gif"  => Some(MediaTypes.`image/gif`)
+      case "image/jpeg" => Some(MediaTypes.`image/jpeg`)
+      case "image/png"  => Some(MediaTypes.`image/png`)
+      case _ => None
     }
   }
 }

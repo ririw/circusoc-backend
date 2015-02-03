@@ -135,11 +135,11 @@ class MemberSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with P
     broken should be(Right(DuplicateSNumError))
   }
   it should "create proofs from authenticated users" in {
-    val autheduser = new AuthenticatedUser(1, "steve", Set(CanUpdateMembers()))
+    val autheduser = new AuthenticatedUser(1, "steve", Set(CanUpdateMembers))
     HasUpdatePermission(autheduser)
   }
   it should "reject proofs when the user doens't have permission" in {
-    val autheduser = new AuthenticatedUser(1, "steve", Set(CanEditTagsPermission()))
+    val autheduser = new AuthenticatedUser(1, "steve", Set(CanEditTagsPermission))
     intercept[AssertionError]{
       HasUpdatePermission(autheduser)
     }

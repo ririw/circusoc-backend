@@ -192,7 +192,7 @@ object Member {
 sealed trait MayUpdateUserProof
 
   case class HasUpdatePermission(updatingUser: AuthenticatedUser) extends MayUpdateUserProof {
-  assert(updatingUser.hasPermission(com.circusoc.simplesite.users.permissions.CanUpdateMembers()))
+  assert(updatingUser.hasPermission(com.circusoc.simplesite.users.permissions.CanUpdateMembers))
 }
 
 case class TestUpdatePermission()(implicit config: WithConfig) extends MayUpdateUserProof {

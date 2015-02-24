@@ -19,6 +19,7 @@ import scalikejdbc._
 
 class MemberSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with PropertyChecks {
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val db: com.circusoc.simplesite.DB = new com.circusoc.simplesite.DB {
       override val poolName = 'memberspec
       override def setup() = {

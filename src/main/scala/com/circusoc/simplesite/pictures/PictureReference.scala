@@ -1,17 +1,14 @@
 package com.circusoc.simplesite.pictures
 
-import com.circusoc.simplesite.WithConfig
-import java.net.{URLConnection, URL}
-import spray.json._
-import scalikejdbc._
+import java.io.{ByteArrayInputStream, InputStream}
+import java.net.{URL, URLConnection}
 
-import scalikejdbc.NamedDB
-import scala.io.Source
+import com.circusoc.simplesite.WithConfig
 import com.circusoc.simplesite.users.AuthenticatedUser
 import com.circusoc.simplesite.users.permissions.ModifyImagesPermission
+import scalikejdbc._
 import spray.http.{MediaType, MediaTypes}
-import java.io.{ByteArrayInputStream, InputStream}
-import scala.util.{Failure, Success, Try}
+import spray.json._
 
 case class PictureReference(id: Long) {
   def url()(implicit config: WithConfig): URL = new URL(config.paths.baseUrl.toExternalForm + s"/picture/$id")

@@ -1,25 +1,26 @@
 package com.circusoc.simplesite.pictures
 
-import org.dbunit.DBTestCase
-import org.scalatest.{BeforeAndAfter, FlatSpecLike}
-import org.scalatest.prop.{TableDrivenPropertyChecks, PropertyChecks}
+import java.net.URL
+import java.sql.{Connection, DriverManager}
+
 import com.circusoc.simplesite._
-import scalikejdbc.ConnectionPool
 import org.codemonkey.simplejavamail.Email
-import java.sql.{DriverManager, Connection}
+import org.dbunit.DBTestCase
 import org.dbunit.database.DatabaseConnection
-import org.dbunit.operation.DatabaseOperation
 import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
-import java.net.URL
+import org.dbunit.operation.DatabaseOperation
 import org.scalatest.Matchers._
-import spray.http.MediaTypes
+import org.scalatest.prop.{PropertyChecks, TableDrivenPropertyChecks}
+import org.scalatest.{BeforeAndAfter, FlatSpecLike}
+import scalikejdbc.ConnectionPool
 
 /**
  *
  */
 class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with PropertyChecks {
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val db: DB = new DB {
       override val poolName = 'picturespec
       override def setup() = {
@@ -196,6 +197,7 @@ class PictureSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with 
 
   it should "fail to insert non-existent default pictures" in {
     val config_nopic = new WithConfig {
+      override val port: Int = 8080
       override val db: DB = new DB {
         override val poolName = 'picturespec_default
         override def setup() = {

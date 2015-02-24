@@ -2,16 +2,16 @@ package com.circusoc.simplesite
 
 import java.io.File
 import java.net.URL
-import java.util.Properties
 import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics
 import com.typesafe.config.{Config, ConfigFactory}
-import org.codemonkey.simplejavamail.{Mailer, Email}
+import org.codemonkey.simplejavamail.{Email, Mailer}
 import org.slf4j.LoggerFactory
 import scalikejdbc._
 
 trait WithConfig {
+  val port: Int
   val db: DB
   val hire: Hire
   val mailer: MailerLike
@@ -34,6 +34,7 @@ class PropertiesConfig() extends WithConfig {
   override val hire = new PropertiesConfigHire(config)
   override val mailer = new PropertiesConfigMailer(config, hire)
   override val paths = new PropertiesConfigPath(config)
+  override val port: Int = config.getInt("com.circusoc.port")
 }
 
 class Stats {

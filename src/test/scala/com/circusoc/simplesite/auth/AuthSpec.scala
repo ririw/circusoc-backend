@@ -34,6 +34,7 @@ class AuthSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with Pro
     override val paths: PathConfig = new PathConfig {
       override val cdnUrl = new URL("https://localhost:5051")
     }
+    override val port: Int = 8080
   }
 
   def getJDBC: Connection = {

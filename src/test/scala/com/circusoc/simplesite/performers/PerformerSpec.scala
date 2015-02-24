@@ -5,9 +5,6 @@ import java.sql.{Connection, DriverManager}
 
 import com.circusoc.simplesite._
 import com.circusoc.simplesite.pictures.PictureReference
-import com.circusoc.simplesite.users.AuthenticatedUser
-import com.circusoc.simplesite.users.User.UserBuilder
-import com.circusoc.simplesite.users.permissions.CanAdministerUsersPermission
 import org.codemonkey.simplejavamail.Email
 import org.dbunit.DBTestCase
 import org.dbunit.database.DatabaseConnection
@@ -18,12 +15,13 @@ import org.scalatest.Matchers._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{BeforeAndAfter, FlatSpecLike}
 import scalikejdbc.ConnectionPool
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with PropertyChecks {
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val db: DB = new DB {
       override val poolName = 'performerspec
       override def setup() = {
@@ -335,6 +333,7 @@ class PerformerSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter wit
 
 class MayAlterPerformersProofSpec extends FlatSpecLike {
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val isProduction = true
     override val db: DB = new DB {}
     override val hire: Hire = new Hire {}

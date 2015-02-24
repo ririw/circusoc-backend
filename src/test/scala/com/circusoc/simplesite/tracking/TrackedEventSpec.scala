@@ -1,29 +1,31 @@
 package com.circusoc.simplesite.tracking
 
-import org.dbunit.{PropertiesBasedJdbcDatabaseTester, Assertion, DBTestCase}
-import org.scalatest.{BeforeAndAfter, FlatSpecLike}
-import org.scalatest.prop.PropertyChecks
-import com.circusoc.simplesite._
-import scalikejdbc.ConnectionPool
-import org.codemonkey.simplejavamail.Email
 import java.net.URL
-import java.sql.{DriverManager, Connection}
+import java.sql.{Connection, DriverManager}
+
+import com.circusoc.simplesite._
+import org.codemonkey.simplejavamail.Email
 import org.dbunit.database.DatabaseConnection
-import org.dbunit.operation.DatabaseOperation
 import org.dbunit.dataset.IDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder
+import org.dbunit.operation.DatabaseOperation
+import org.dbunit.{Assertion, DBTestCase, PropertiesBasedJdbcDatabaseTester}
 import org.joda.time
+import org.scalatest.Matchers._
+import org.scalatest.prop.PropertyChecks
+import org.scalatest.{BeforeAndAfter, FlatSpecLike}
+import scalikejdbc.ConnectionPool
+import spray.json._
+
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import org.scalatest.Matchers._
-import spray.json._
-import scala.Some
 
 /**
  *
  */
 class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with PropertyChecks {
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val db: DB = new DB {
       override val poolName = 'trackedeventspec
       override def setup() = {
@@ -137,7 +139,7 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
     new time.Duration(derivedEvent.timestamp, now).getMillis should be < -4500l
   }
   it should "deserialize correctly" in {
-    import PageViewJsonReaders._
+    import com.circusoc.simplesite.tracking.PageViewJsonReaders._
 
     val json =
       """{
@@ -197,7 +199,7 @@ class TrackedEventSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter 
   }
 
   it should "deserialize correctly" in {
-    import PageViewJsonReaders._
+    import com.circusoc.simplesite.tracking.PageViewJsonReaders._
     val json =
       """{
         |  "clientID": "asd",

@@ -116,6 +116,7 @@ class HireSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with Pro
 }
 
 class PartialConfig(mockMailer: Email => Unit) extends WithConfig {
+  override val port: Int = 8080
   override val db: DB = new DB {
     override val poolName = 'hirespec
     override def setup() = {

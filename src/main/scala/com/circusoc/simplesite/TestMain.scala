@@ -1,14 +1,10 @@
 package com.circusoc.simplesite
 
-import java.net.URL
-
 import akka.actor.ActorSystem
 import com.circusoc.simplesite.services._
 import com.circusoc.simplesite.users.permissions
 import com.circusoc.testgraph.testgraph._
 import com.circusoc.testgraph.{PerformerTestGraph, PictureTestGraph}
-import org.codemonkey.simplejavamail.{Email, Mailer}
-import scalikejdbc.{ConnectionPool, NamedDB}
 import spray.routing.SimpleRoutingApp
 
 
@@ -85,16 +81,24 @@ with TrackingEventService {
   override implicit lazy val config: WithConfig = new PropertiesConfig
 
   def serve(): Unit = {
-    startServer(interface = "localhost", port = 8080) {
-      corsRoutes ~
-        respondWithHeader(new CorsOriginHeader(config.paths.cdnUrl)) {
-          performerRoutes ~
-            authroutes ~
-            memberroutes ~
-            hireRoutes ~
-            pictureRoutes ~
-            trackingRoutes
-        }
+    startServer(interface = "localhost", port = config.port) {
+      pathPrefix("api") {
+        corsRoutes ~
+          respondWithHeader(new CorsOriginHeader(config.paths.cdnUrl)) {
+            performerRoutes ~
+              authroutes ~
+              memberroutes ~
+              hireRoutes ~
+              pictureRoutes ~
+              trackingRoutes
+          }
+      } ~
+      path("") {
+        getFromFile("static/index.html")
+      } ~
+      pathPrefix("") {
+        getFromDirectory("static/")
+      }
     }
   }
 }

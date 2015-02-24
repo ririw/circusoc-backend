@@ -20,6 +20,7 @@ import spray.http.{MediaTypes, MediaType}
  */
 class PictureResultSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter with PropertyChecks {
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val db: DB = new DB {
       override val poolName = 'pictureresultspec
       override def setup() = {

@@ -2,13 +2,11 @@ package com.circusoc.simplesite
 
 import java.net.URL
 
-import com.circusoc.simplesite.services._
-import com.codahale.metrics.MetricRegistry
-import spray.http.HttpHeaders.Cookie
-import spray.http.{HttpHeaders, Rendering, HttpHeader}
-import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
-import org.codemonkey.simplejavamail.{Mailer, Email}
+import com.circusoc.simplesite.services._
+import org.codemonkey.simplejavamail.{Email, Mailer}
+import spray.http.{HttpHeader, Rendering}
+import spray.routing.SimpleRoutingApp
 
 object Main extends Object // extends App // :D
             with SimpleRoutingApp
@@ -23,20 +21,22 @@ object Main extends Object // extends App // :D
   implicit val system = ActorSystem("my-system")
   config.db.setup()
   startServer(interface = "localhost", port = 8080) {
-    authroutes ~
-    hireRoutes ~
-    pictureRoutes ~
-    trackingRoutes ~
-    memberroutes ~
-    performerRoutes ~
-    corsRoutes ~
-    path("setup") {
-      get {
-        complete {
-          DBSetup.setup()
-          "Done"
+    path("api") {
+      authroutes ~
+        hireRoutes ~
+        pictureRoutes ~
+        trackingRoutes ~
+        memberroutes ~
+        performerRoutes ~
+        corsRoutes ~
+        path("setup") {
+          get {
+            complete {
+              DBSetup.setup()
+              "Done"
+            }
+          }
         }
-      }
     }
   }
 }
@@ -59,6 +59,7 @@ trait Core {
       //mailer.sendMail(email)
     }
     override val paths: PathConfig = new PathConfig {}
+    override val port: Int = 8080
   }
 
   protected implicit def system: ActorSystem

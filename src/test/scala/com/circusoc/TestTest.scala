@@ -129,6 +129,7 @@ class MainSite extends SimpleRoutingApp
     override val paths: PathConfig = new PathConfig {
       override val baseUrl: URL = new URL("http://localhost:8080")
     }
+    override val port: Int = 8080
   }
 
   def serve(): Unit = {

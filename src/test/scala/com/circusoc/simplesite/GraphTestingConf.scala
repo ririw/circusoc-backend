@@ -7,6 +7,7 @@ import scalikejdbc.ConnectionPool
 
 object GraphTestingConf {
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val db: DB = new DB {
       override val poolName = 'usergraphtests
       override def setup() = {

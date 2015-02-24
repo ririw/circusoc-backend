@@ -22,6 +22,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
   System.setProperty( PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD, "" )
 
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val db: DB = new DB {
       override val poolName = 'userspec
       override def setup() = {
@@ -131,6 +132,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 
   it should "not allow test proofs in production" in {
     val prod_config = new WithConfig {
+      override val port: Int = 8080
       override val isProduction = true
       override val db: DB = new DB {
         override val poolName = 'userspec
@@ -297,6 +299,7 @@ class UserSpec extends DBTestCase with FlatSpecLike with BeforeAndAfter {
 
   "the debug proof" should "not work in production" in {
     val newConfig = new WithConfig {
+      override val port: Int = 8080
       override val hire: Hire = config.hire
       override val paths: PathConfig = config.paths
       override val db: DB = config.db

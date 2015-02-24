@@ -18,6 +18,7 @@ import scalikejdbc.ConnectionPool
 
 class SkillSpec extends DBTestCase with FlatSpecLike with PropertyChecks {
   implicit val config = new WithConfig {
+    override val port: Int = 8080
     override val db: DB = new DB {
       override val poolName = 'skillspec
       override def setup() = {
